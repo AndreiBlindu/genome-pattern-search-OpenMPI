@@ -114,7 +114,25 @@ char *read_file(char *filename)
     return buffer;
 }
 
-int main(int argc, char** argv)
+char *preprocessing(char *text)
+{
+    int N = strlen(text);
+
+    char *newString = (char *)malloc(N);
+    int j = 0;
+
+    for (int i = 1; i < N; i++)
+    {
+        if (text[i] != '\n' && (text[i] == 'A' || text[i] == 'T' || text[i] == 'C' || text[i] == 'G'))
+        {
+            newString[j++] = text[i];
+        }
+    }
+
+    return newString;
+}
+
+int main(int argc, char **argv)
 {
     if (argc < 3)
     { // Check that the number of inserted parameters is correct
@@ -125,6 +143,9 @@ int main(int argc, char** argv)
     {
         char *txt = read_file(argv[1]);
         char *pat = read_file(argv[2]);
+
+        txt = preprocessing(txt);
+        pat = preprocessing(pat);
 
         int N = strlen(txt);
         int M = strlen(pat);
