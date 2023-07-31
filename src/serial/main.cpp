@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include "../utils/read_file.h"
 
 // Fills lps[] for given pattern pat[0..M-1]
 void computeLPSArray(char *pat, int M, int *lps)
@@ -67,54 +68,6 @@ void KMPSearch(char *pat, int M, char *txt, int N, int *lps)
     }
 }
 
-char *read_file(char *filename)
-{
-    FILE *file;
-    char *buffer = NULL; // initialize buffer to NULL
-    int buffer_size = 0;
-    int i = 0;
-
-    // Open file for reading
-    file = fopen(filename, "r");
-
-    // Check if file opened successfully
-    if (file == NULL)
-    {
-        printf("Error: Failed to open file '%s'.\n", filename);
-        return NULL;
-    }
-
-    // Read file character by character
-    int c;
-    while ((c = fgetc(file)) != EOF)
-    {
-        // If buffer is full, resize it
-        if (i >= buffer_size)
-        {
-            buffer_size += 1000;                           // increase buffer size by 1000 bytes
-            buffer = (char *)realloc(buffer, buffer_size); // resize buffer
-            if (buffer == NULL)
-            {
-                printf("Error: Memory allocation failed.\n");
-                return NULL;
-            }
-        }
-        buffer[i] = c;
-        i++;
-    }
-
-    // Close file
-    fclose(file);
-
-    // Print the character array
-    // printf("%s", buffer);
-
-    // Free the dynamically allocated buffer
-    // free(buffer);
-
-    return buffer;
-}
-
 char *preprocessing(char *text)
 {
     int N = strlen(text);
@@ -144,24 +97,24 @@ int main(int argc, char **argv)
     {
         clock_t begin = clock();
 
-        char *txt = read_file(argv[1]);
-        char *pat = read_file(argv[2]);
+        char *genome = read_file(argv[1]);
+        char *pattern = read_file(argv[2]);
 
-        txt = preprocessing(txt);
-        pat = preprocessing(pat);
+        genome = preprocessing(genome);
+        pattern = preprocessing(pattern);
 
-        int N = strlen(txt);
-        int M = strlen(pat);
+        int N = strlen(genome);
+        int M = strlen(pattern);
 
         // create lps[] that will hold the longest prefix suffix
         // values for pattern
         int *lps = (int *)malloc(M);
 
         // Preprocess the pattern (calculate lps[] array)
-        computeLPSArray(pat, M, lps);
+        computeLPSArray(pattern, M, lps);
 
-        // Prints occurrences of txt[] in pat[]
-        KMPSearch(pat, M, txt, N, lps);
+        // Prints occurrences of pattern[] in genome[]
+        KMPSearch(pattern, M, genome, N, lps);
 
         clock_t end = clock();
         double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
