@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 // Fills lps[] for given pattern pat[0..M-1]
 void computeLPSArray(char *pat, int M, int *lps)
@@ -141,6 +142,8 @@ int main(int argc, char **argv)
     }
     else
     {
+        clock_t begin = clock();
+
         char *txt = read_file(argv[1]);
         char *pat = read_file(argv[2]);
 
@@ -159,5 +162,9 @@ int main(int argc, char **argv)
 
         // Prints occurrences of txt[] in pat[]
         KMPSearch(pat, M, txt, N, lps);
+
+        clock_t end = clock();
+        double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
+        printf("Execution time (s): %f\n", time_spent);
     }
 }
