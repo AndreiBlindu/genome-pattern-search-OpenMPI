@@ -46,7 +46,7 @@ void printLPSArray(int *lps, int M)
     printf("]\n");
 }
 
-void KMPSearch(char *pat, int M, char *txt, int N, int *lps)
+void KMPSearch(char *pat, int M, char *txt, int N, int *lps, int start_index)
 {
     int i = 0; // index for txt[]
     int j = 0; // index for pat[]
@@ -60,7 +60,7 @@ void KMPSearch(char *pat, int M, char *txt, int N, int *lps)
 
         if (j == M)
         {
-            printf("Found pattern at index %d \n", i - j);
+            printf("Found pattern at index %d \n", i - j + start_index);
             j = lps[j - 1];
         }
 

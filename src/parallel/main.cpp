@@ -15,6 +15,8 @@
 
 int main(int argc, char **argv)
 {
+    bool VERBOSE = false;
+
     if (argc < 3)
     { // Check that the number of inserted parameters is correct
         printf("Please insert all the necessary parameters");
@@ -22,6 +24,14 @@ int main(int argc, char **argv)
     }
     else
     {
+        if (argc > 3)
+        {
+            if (strcmp(argv[3], "--v") == 0 || strcmp(argv[3], "-verbose") == 0)
+            {
+                VERBOSE = true;
+            }
+        }
+        
         MPI_Init(&argc, &argv);
 
         int RANK, SIZE;
@@ -62,8 +72,11 @@ int main(int argc, char **argv)
         MPI_Bcast(&pattern_size, 1, MPI_LONG, 0, MPI_COMM_WORLD);
         if (RANK != 0)
         {
-            printf("[MPI process %d] Received genome size: %lu\n", RANK, genome_size);
-            printf("[MPI process %d] Received pattern size: %lu\n", RANK, pattern_size);
+            if (VERBOSE)
+            {
+                printf("[MPI process %d] Received genome size: %lu\n", RANK, genome_size);
+                printf("[MPI process %d] Received pattern size: %lu\n", RANK, pattern_size);
+            }
 
             // SLAVE must allocate memory before receiving the data
             // otherwise we get memory errors
@@ -73,7 +86,8 @@ int main(int argc, char **argv)
         MPI_Barrier(MPI_COMM_WORLD);
 
         long chunk_size = genome_size / (SIZE - 1);
-        char *chunk = (char *)malloc((chunk_size + pattern_size));
+        long chunk_size_extended = chunk_size + pattern_size;
+        char *chunk = (char *)malloc(chunk_size_extended);
         long chunk_start_index = 0;
 
         // MASTER broadcasts pattern to all slaves
@@ -81,20 +95,22 @@ int main(int argc, char **argv)
         MPI_Bcast(lps, pattern_size, MPI_INT, 0, MPI_COMM_WORLD);
         if (RANK != 0)
         {
-            printf("[MPI process %d] Received pattern: %s\n", RANK, pattern);
-            printf("[MPI process %d] Received lps: ", RANK);
-            printLPSArray(lps, pattern_size);
+            if (VERBOSE)
+            {
+                printf("[MPI process %d] Received pattern: %s\n", RANK, pattern);
+                printf("[MPI process %d] Received lps: ", RANK);
+                printLPSArray(lps, pattern_size);
+            }
         }
         MPI_Barrier(MPI_COMM_WORLD);
 
         // MASTER sends to all slaves genome chunks + start index of each chunk
         if (RANK == 0)
         {
-
             for (int s = 1; s < SIZE; s++)
             {
-                memcpy(chunk, &genome[chunk_size * (s - 1)], (chunk_size + pattern_size));
-                MPI_Send(chunk, (chunk_size + pattern_size), MPI_CHAR, s, TAG_CHUNK, MPI_COMM_WORLD);
+                memcpy(chunk, &genome[chunk_size * (s - 1)], chunk_size_extended);
+                MPI_Send(chunk, chunk_size_extended, MPI_CHAR, s, TAG_CHUNK, MPI_COMM_WORLD);
 
                 chunk_start_index = chunk_size * (s - 1);
                 MPI_Send(&chunk_start_index, 1, MPI_LONG, s, TAG_START_INDEX, MPI_COMM_WORLD);
@@ -102,12 +118,15 @@ int main(int argc, char **argv)
         }
         else // each SLAVE receive a genome chunk + start index of each chunk
         {
-            MPI_Recv(chunk, (chunk_size + pattern_size), MPI_BYTE, 0, TAG_CHUNK, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            MPI_Recv(chunk, chunk_size_extended, MPI_BYTE, 0, TAG_CHUNK, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
             MPI_Recv(&chunk_start_index, 1, MPI_LONG, 0, TAG_START_INDEX, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-            printf("[MPI process %d] Received chunk start index: %lu\n", RANK, chunk_start_index);
+            if (VERBOSE)
+            {
+                printf("[MPI process %d] Received chunk start index: %lu\n", RANK, chunk_start_index);
+            }
 
             // Each SLAVE runs the KMP algorithm to search the pattern inside its chunk
-            KMPSearch(pattern, pattern_size, chunk, (chunk_size + pattern_size), lps);
+            KMPSearch(pattern, pattern_size, chunk, chunk_size_extended, lps, chunk_start_index);
         }
 
         double endTime = MPI_Wtime();

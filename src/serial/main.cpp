@@ -34,7 +34,7 @@ int main(int argc, char **argv)
         computeLPSArray(pattern, M, lps);
 
         // Prints occurrences of pattern[] in genome[]
-        KMPSearch(pattern, M, genome, N, lps);
+        KMPSearch(pattern, M, genome, N, lps, 0);
 
         clock_t end = clock();
         double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
