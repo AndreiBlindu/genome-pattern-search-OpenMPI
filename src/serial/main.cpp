@@ -33,11 +33,15 @@ int main(int argc, char **argv)
         // Preprocess the pattern (calculate lps[] array)
         computeLPSArray(pattern, M, lps);
 
+        clock_t checkpoint = clock();
+        double time_spent = (double)(checkpoint - begin) / CLOCKS_PER_SEC;
+        printf("Execution time (preprocessing): %.3fs\n", time_spent);
+
         // Prints occurrences of pattern[] in genome[]
         KMPSearch(pattern, M, genome, N, lps, 0);
 
         clock_t end = clock();
-        double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
-        printf("Execution time (s): %f\n", time_spent);
+        time_spent = (double)(end - checkpoint) / CLOCKS_PER_SEC;
+        printf("Execution time (search): %.3fs\n", time_spent);
     }
 }

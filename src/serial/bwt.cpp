@@ -222,6 +222,10 @@ int main(int argc, char **argv)
         // of each rotation
         char *bwt_arr = findLastChar(genome, suffix_arr, genome_size);
 
+        clock_t checkpoint = clock();
+        double time_spent = (double)(checkpoint - begin) / CLOCKS_PER_SEC;
+        printf("Execution time (preprocessing): %.3fs\n", time_spent);
+
         int suffixIndex = bwtSearch(bwt_arr, genome_size, pattern, pattern_size);
         printf("Suffix index: %d\n", suffixIndex);
         if (suffixIndex != -1)
@@ -233,6 +237,10 @@ int main(int argc, char **argv)
         {
             printf("No match found!\n");
         }
+
+        clock_t end = clock();
+        time_spent = (double)(end - checkpoint) / CLOCKS_PER_SEC;
+        printf("Execution time (search): %.3fs\n", time_spent);
 
         return 0;
     }
