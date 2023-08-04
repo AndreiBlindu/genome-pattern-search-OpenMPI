@@ -15,11 +15,18 @@ char *preprocessing(char *text)
         {
             newString[j++] = toupper(text[i]);
         }
-        if (text[i] == '$') // necessary for bwt
-        {
-            newString[j++] = '$';
-        }
     }
+
+    return newString;
+}
+
+char *addTermination(char *text)
+{
+    int N = strlen(text);
+
+    char *newString = (char *)malloc(N+1);
+    strcpy(newString, text);
+    newString[N] = '$';
 
     return newString;
 }
