@@ -94,7 +94,9 @@ int main(int argc, char **argv)
         }
         MPI_Barrier(MPI_COMM_WORLD);
 
-        double endTime1 = MPI_Wtime();
+        double preprocessingEnd = MPI_Wtime();
+        double timeOfExecution = preprocessingEnd - startTime;
+        printf("Execution time (preprocessing): %.3fs \n", timeOfExecution);
 
         // MASTER sends to all slaves genome chunks + start index of each chunk
         if (RANK == 0)
@@ -140,8 +142,10 @@ int main(int argc, char **argv)
         }
 
         double endTime = MPI_Wtime();
-        double timeOfExecution = endTime - endTime1;
-        printf("Execution time: %.3fs \n", timeOfExecution);
+        timeOfExecution = endTime - preprocessingEnd;
+        printf("Execution time (search): %.3fs \n", timeOfExecution);
+        timeOfExecution = endTime - startTime;
+        printf("Execution time (total): %.3fs \n", timeOfExecution);
 
         MPI_Finalize();
     }
