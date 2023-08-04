@@ -4,7 +4,7 @@
 #include <string.h>
 #include "../utils/read_file.h"
 #include "../utils/preprocessing.h"
-#include "../utils/kmp.h"
+#include "../utils/bwt.h"
 
 // export PATH="/Users/andreiblindu/mpi/bin:$PATH"
 // mpicc -o [exec_name] [source_name] <-- compile
@@ -31,7 +31,7 @@ int main(int argc, char **argv)
                 VERBOSE = true;
             }
         }
-        
+
         MPI_Init(&argc, &argv);
 
         int RANK, SIZE;
@@ -44,8 +44,6 @@ int main(int argc, char **argv)
 
         long genome_size = 0;
         long pattern_size = 0;
-
-        int *lps;
 
         // Only MASTER reads the files
         if (RANK == 0)
@@ -60,10 +58,6 @@ int main(int argc, char **argv)
 
             genome_size = strlen(genome);
             pattern_size = strlen(pattern);
-
-            // Preprocess the pattern (calculate lps[] array)
-            lps = (int *)malloc(pattern_size * sizeof(int));
-            computeLPSArray(pattern, pattern_size, lps);
         }
 
         // MASTER communicates genome and pattern size via broadcast
@@ -81,7 +75,6 @@ int main(int argc, char **argv)
             // SLAVE must allocate memory before receiving the data
             // otherwise we get memory errors
             pattern = (char *)malloc(pattern_size);
-            lps = (int *)malloc(pattern_size * sizeof(int));
         }
         MPI_Barrier(MPI_COMM_WORLD);
 
@@ -92,14 +85,11 @@ int main(int argc, char **argv)
 
         // MASTER broadcasts pattern to all slaves
         MPI_Bcast(pattern, pattern_size, MPI_CHAR, 0, MPI_COMM_WORLD);
-        MPI_Bcast(lps, pattern_size, MPI_INT, 0, MPI_COMM_WORLD);
         if (RANK != 0)
         {
             if (VERBOSE)
             {
                 printf("[MPI process %d] Received pattern: %s\n", RANK, pattern);
-                printf("[MPI process %d] Received lps: ", RANK);
-                printLPSArray(lps, pattern_size);
             }
         }
         MPI_Barrier(MPI_COMM_WORLD);
@@ -129,15 +119,33 @@ int main(int argc, char **argv)
                 printf("[MPI process %d] Received chunk start index: %lu\n", RANK, chunk_start_index);
             }
 
-            // Each SLAVE runs the KMP algorithm to search the pattern inside its chunk
-            KMPSearch(pattern, pattern_size, chunk, chunk_size_extended, lps, chunk_start_index);
+            chunk = addTermination(chunk);
+            chunk_size_extended++;
+
+            // Computes the suffix array
+            int *suffix_arr = (int *)malloc(chunk_size_extended * sizeof(int));
+            suffix_arr = computeSuffixArray(chunk, chunk_size_extended);
+
+            // Adds to the output array the last char
+            // of each rotation
+            char *bwt_arr = findLastChar(chunk, suffix_arr, chunk_size_extended);
+
+            int matchIndex = bwtSearch(bwt_arr, suffix_arr, chunk_size_extended, pattern, pattern_size, chunk_start_index);
+            if (matchIndex != -1)
+            {
+                printf("Found match at index %d\n", matchIndex);
+            }
+            else
+            {
+                printf("No match found!\n");
+            }
         }
 
         double endTime = MPI_Wtime();
         timeOfExecution = endTime - preprocessingEnd;
         printf("Execution time (search): %.3fs \n", timeOfExecution);
         timeOfExecution = endTime - startTime;
-        printf("Execution time (total): %.3fs \n", timeOfExecution);        
+        printf("Execution time (total): %.3fs \n", timeOfExecution);
 
         MPI_Finalize();
     }
