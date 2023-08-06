@@ -1,11 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-char *read_file(char *filename)
+char *readFile(char *filename)
 {
     FILE *file;
     char *buffer = NULL; // initialize buffer to NULL
-    int buffer_size = 0;
+    int bufferSize = 0;
     int i = 0;
 
     // Open file for reading
@@ -23,10 +23,10 @@ char *read_file(char *filename)
     while ((c = fgetc(file)) != EOF)
     {
         // If buffer is full, resize it
-        if (i >= buffer_size)
+        if (i >= bufferSize)
         {
-            buffer_size += 1000;                           // increase buffer size by 1000 bytes
-            buffer = (char *)realloc(buffer, buffer_size); // resize buffer
+            bufferSize += 1000;                           // increase buffer size by 1000 bytes
+            buffer = (char *)realloc(buffer, bufferSize); // resize buffer
             if (buffer == NULL)
             {
                 printf("Error: Memory allocation failed.\n");
@@ -39,12 +39,6 @@ char *read_file(char *filename)
 
     // Close file
     fclose(file);
-
-    // Print the character array
-    // printf("%s", buffer);
-
-    // Free the dynamically allocated buffer
-    // free(buffer);
 
     return buffer;
 }

@@ -20,68 +20,68 @@ int cmpfunc(const void *x, const void *y)
 
 // Takes text to be transformed and its length as
 // arguments and returns the corresponding suffix array
-int *computeSuffixArray(char *input_text, int len_text)
+int *computeSuffixArray(char *inputText, int textLength)
 {
     // Array of structures to store rotations and
     // their indexes
-    struct rotation *suff = (rotation *)malloc(len_text * sizeof(rotation));
+    struct rotation *suff = (rotation *)malloc(textLength * sizeof(rotation));
 
     // Structure is needed to maintain old indexes of
     // rotations after sorting them
-    for (int i = 0; i < len_text; i++)
+    for (int i = 0; i < textLength; i++)
     {
         suff[i].index = i;
-        suff[i].suffix = (input_text + i);
+        suff[i].suffix = (inputText + i);
     }
 
     // Sorts rotations using comparison
     // function defined above
-    qsort(suff, len_text, sizeof(struct rotation),
+    qsort(suff, textLength, sizeof(struct rotation),
           cmpfunc);
 
     // Stores the indexes of sorted rotations
-    int *suffix_arr = (int *)malloc(len_text * sizeof(int));
-    for (int i = 0; i < len_text; i++)
-        suffix_arr[i] = suff[i].index;
+    int *suffixArr = (int *)malloc(textLength * sizeof(int));
+    for (int i = 0; i < textLength; i++)
+        suffixArr[i] = suff[i].index;
 
     // Returns the computed suffix array
-    return suffix_arr;
+    return suffixArr;
 }
 
 // Takes suffix array and its size
 // as arguments and returns the
 // Burrows - Wheeler Transform of given text
-char *findLastChar(char *input_text,
-                   int *suffix_arr, int n)
+char *findLastChar(char *inputText,
+                   int *suffixArr, int n)
 {
     // Iterates over the suffix array to find
     // the last char of each cyclic rotation
-    char *bwt_arr = (char *)malloc(n * sizeof(char));
+    char *bwtArr = (char *)malloc(n * sizeof(char));
     int i;
     for (i = 0; i < n; i++)
     {
         // Computes the last char which is given by
-        // input_text[(suffix_arr[i] + n - 1) % n]
-        int j = suffix_arr[i] - 1;
+        // inputText[(suffixArr[i] + n - 1) % n]
+        int j = suffixArr[i] - 1;
         if (j < 0)
             j = j + n;
 
-        bwt_arr[i] = input_text[j];
+        bwtArr[i] = inputText[j];
     }
 
-    bwt_arr[i] = '\0';
+    bwtArr[i] = '\0';
 
     // Returns the computed Burrows - Wheeler Transform
-    return bwt_arr;
+    return bwtArr;
 }
 
-// how many times character c appeared before index i in string s
-int rank(char *s, char c, int i)
+// how many times a character c appeared before an index in a string
+int rank(char *str, char c, int index)
 {
     int count = 0;
-    for (int j = i - 1; j >= 0; j--)
+    for (int j = index - 1; j >= 0; j--)
     {
-        if (s[j] == c)
+        if (str[j] == c)
         {
             count++;
         }
@@ -89,9 +89,9 @@ int rank(char *s, char c, int i)
     return count;
 }
 
-char *sortString(char *s, char *sorted)
+char *sortString(char *str, char *sorted)
 {
-    strcpy(sorted, s);
+    strcpy(sorted, str);
     char temp;
 
     int i, j;
@@ -113,14 +113,14 @@ char *sortString(char *s, char *sorted)
     return sorted;
 }
 
-int countNucleotide(char *string, char nucleotide)
+int countNucleotide(char *str, char nucleotide)
 {
     int count = 0;
-    int len = strlen(string);
+    int len = strlen(str);
 
     for (int i = 0; i < len; i++)
     {
-        if (string[i] == nucleotide)
+        if (str[i] == nucleotide)
         {
             count++;
         }
@@ -148,12 +148,12 @@ int getNucleotideIndex(char nucleotide)
 }
 
 // Took inspiration from https://mr-easy.github.io/2019-12-19-burrows-wheeler-alignment-part-1/
-int bwtSearch(char *bwt_arr, int *suffix_arr, int bwt_len, char *pattern, int pattern_len, int start_index)
+int bwtSearch(char *bwtArr, int *suffixArr, int bwtLength, char *pattern, int patternLength, int startIndex)
 {
-    int countA = countNucleotide(bwt_arr, 'A');
-    int countC = countNucleotide(bwt_arr, 'C');
-    int countG = countNucleotide(bwt_arr, 'G');
-    int countT = countNucleotide(bwt_arr, 'T');
+    int countA = countNucleotide(bwtArr, 'A');
+    int countC = countNucleotide(bwtArr, 'C');
+    int countG = countNucleotide(bwtArr, 'G');
+    int countT = countNucleotide(bwtArr, 'T');
 
     int bands[5];
 
@@ -161,34 +161,25 @@ int bwtSearch(char *bwt_arr, int *suffix_arr, int bwt_len, char *pattern, int pa
     bands[1] = bands[0] + countA;
     bands[2] = bands[1] + countC;
     bands[3] = bands[2] + countG;
-    bands[4] = bwt_len;
+    bands[4] = bwtLength;
 
-    int band_start = bands[getNucleotideIndex(pattern[pattern_len - 1])];
-    int band_end = bands[getNucleotideIndex(pattern[pattern_len - 1]) + 1];
-    // printf("%d\n", band_start);
-    // printf("%d\n\n", band_end);
+    int bandStart = bands[getNucleotideIndex(pattern[patternLength - 1])];
+    int bandEnd = bands[getNucleotideIndex(pattern[patternLength - 1]) + 1];
 
-    for (int i = (pattern_len - 2); i >= 0; i--)
+    for (int i = (patternLength - 2); i >= 0; i--)
     {
-        if (band_start == band_end)
+        if (bandStart == bandEnd)
             return -1; // no match
 
         char currentChar = pattern[i];
-        int rank_top = rank(bwt_arr, currentChar, band_start);
-        int rank_bottom = rank(bwt_arr, currentChar, band_end);
-        // printf("%d\n", rank_top);
-        // printf("%d\n\n", rank_bottom);
+        int rankTop = rank(bwtArr, currentChar, bandStart);
+        int rankBottom = rank(bwtArr, currentChar, bandEnd);
 
-        band_start = bands[getNucleotideIndex(currentChar)] + rank_top;
-        band_end = bands[getNucleotideIndex(currentChar)] + rank_bottom;
-        /*printf("%d\n", band_start);
-        printf("%d\n\n", band_end);
-
-        printf("%d\n", i);
-        printf("############\n");*/
+        bandStart = bands[getNucleotideIndex(currentChar)] + rankTop;
+        bandEnd = bands[getNucleotideIndex(currentChar)] + rankBottom;
     }
 
-    printf("Suffix index: %d\n", band_start);
+    printf("Suffix index: %d\n", bandStart);
 
-    return (suffix_arr[band_start] + start_index);
+    return (suffixArr[bandStart] + startIndex);
 }

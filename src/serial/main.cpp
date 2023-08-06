@@ -15,32 +15,32 @@ int main(int argc, char **argv)
     }
     else
     {
-        clock_t begin = clock();
+        clock_t startTimer = clock();
 
-        char *genome = read_file(argv[1]);
-        char *pattern = read_file(argv[2]);
+        char *genome = readFile(argv[1]);
+        char *pattern = readFile(argv[2]);
 
         genome = preprocessing(genome);
         pattern = preprocessing(pattern);
 
         genome = addTermination(genome);
 
-        int genome_size = strlen(genome);
-        int pattern_size = strlen(pattern);
+        int genomeSize = strlen(genome);
+        int patternSize = strlen(pattern);
 
         clock_t checkpoint = clock();
-        double time_spent = (double)(checkpoint - begin) / CLOCKS_PER_SEC;
-        printf("Execution time (preprocessing): %.3fs\n", time_spent);
+        double executionTime = (double)(checkpoint - startTimer) / CLOCKS_PER_SEC;
+        printf("Execution time (preprocessing): %.3fs\n", executionTime);
 
         // Computes the suffix array
-        int *suffix_arr = (int *)malloc(genome_size * sizeof(int));
-        suffix_arr = computeSuffixArray(genome, genome_size);
+        int *suffixArr = (int *)malloc(genomeSize * sizeof(int));
+        suffixArr = computeSuffixArray(genome, genomeSize);
 
         // Adds to the output array the last char
         // of each rotation
-        char *bwt_arr = findLastChar(genome, suffix_arr, genome_size);
+        char *bwtArr = findLastChar(genome, suffixArr, genomeSize);
 
-        int matchIndex = bwtSearch(bwt_arr, suffix_arr, genome_size, pattern, pattern_size, 0);
+        int matchIndex = bwtSearch(bwtArr, suffixArr, genomeSize, pattern, patternSize, 0);
         if (matchIndex != -1)
         {
             printf("Found match at index %d\n", matchIndex);
@@ -50,12 +50,12 @@ int main(int argc, char **argv)
             printf("No match found!\n");
         }
 
-        clock_t end = clock();
-        time_spent = (double)(end - checkpoint) / CLOCKS_PER_SEC;
-        printf("Execution time (search): %.3fs\n", time_spent);
+        clock_t stopTimer = clock();
+        executionTime = (double)(stopTimer - checkpoint) / CLOCKS_PER_SEC;
+        printf("Execution time (search): %.3fs\n", executionTime);
 
-        time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
-        printf("Execution time (total): %.3fs\n", time_spent);
+        executionTime = (double)(stopTimer - startTimer) / CLOCKS_PER_SEC;
+        printf("Execution time (total): %.3fs\n", executionTime);
 
         return 0;
     }
