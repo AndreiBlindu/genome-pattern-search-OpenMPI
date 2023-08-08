@@ -10,6 +10,7 @@
 // mpicc -o [exec_name] [source_name] <-- compile
 // mpirun -n [nodes] [exec_name] <-- run
 
+#define TAG_PRE 99
 #define TAG_CHUNK 100
 #define TAG_START_INDEX 101
 
@@ -52,13 +53,16 @@ int main(int argc, char **argv)
             genome = readFile(argv[1]);
             pattern = readFile(argv[2]);
 
-            // preprocessing
-            genome = preprocessing(genome);
+            // preprocessing (only pattern)
             pattern = preprocessing(pattern);
 
             genomeSize = strlen(genome);
             patternSize = strlen(pattern);
         }
+
+        double readfileEnd = MPI_Wtime();
+        double executionTime = readfileEnd - startTimer;
+        printf("Execution time (read file): %.3fs \n", executionTime);
 
         // MASTER communicates genome and pattern size via broadcast
         // This is necessary because SLAVES must know how much memory to allocate
@@ -79,8 +83,60 @@ int main(int argc, char **argv)
         MPI_Barrier(MPI_COMM_WORLD);
 
         long chunkSize = genomeSize / SIZE;
+        char *chunk = (char *)malloc(chunkSize);
+
+        // MASTER sends to all slaves genome chunks for preprocessing
+        if (RANK == 0)
+        {
+            for (int s = 1; s < SIZE; s++)
+            {
+                memcpy(chunk, &genome[chunkSize * s], chunkSize);
+                MPI_Send(chunk, chunkSize, MPI_CHAR, s, TAG_PRE, MPI_COMM_WORLD);
+            }
+
+            // the MASTER works on the first chunks
+            memcpy(chunk, &genome[0], chunkSize);
+        }
+        else // each SLAVE receive a genome chunk
+        {
+            MPI_Recv(chunk, chunkSize, MPI_CHAR, 0, TAG_PRE, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        }
+
+        // all SLAVES and MASTER preprocess their chunk
+        chunk = preprocessing(chunk);
+        MPI_Gather(chunk, chunkSize, MPI_CHAR, genome, chunkSize, MPI_CHAR, 0, MPI_COMM_WORLD);
+
+        if (RANK == 0) {
+            genome = (char*)malloc(genomeSize);
+            genome = strcat(chunk, genome);
+
+            // recalculates genomeSize
+            genomeSize = strlen(genome);
+        }
+
+        MPI_Barrier(MPI_COMM_WORLD);
+
+        // MASTER communicates genome and pattern size via broadcast
+        // This is necessary because SLAVES must know how much memory to allocate
+        MPI_Bcast(&genomeSize, 1, MPI_LONG, 0, MPI_COMM_WORLD);
+        MPI_Bcast(&patternSize, 1, MPI_LONG, 0, MPI_COMM_WORLD);
+        if (RANK != 0)
+        {
+            if (VERBOSE)
+            {
+                printf("[MPI process %d] Received genome size: %lu\n", RANK, genomeSize);
+                printf("[MPI process %d] Received pattern size: %lu\n", RANK, patternSize);
+            }
+
+            // SLAVE must allocate memory before receiving the data
+            // otherwise we get memory errors
+            pattern = (char *)malloc(patternSize);
+        }
+        MPI_Barrier(MPI_COMM_WORLD);
+
+        chunkSize = genomeSize / SIZE;
         long chunkSizeExtended = chunkSize + patternSize;
-        char *chunk = (char *)malloc(chunkSizeExtended);
+        chunk = (char *)malloc(chunkSizeExtended);
         long chunkStartIndex = 0;
 
         // MASTER broadcasts pattern to all slaves
@@ -95,7 +151,7 @@ int main(int argc, char **argv)
         MPI_Barrier(MPI_COMM_WORLD);
 
         double preprocessingEnd = MPI_Wtime();
-        double executionTime = preprocessingEnd - startTimer;
+        executionTime = preprocessingEnd - readfileEnd;
         printf("Execution time (preprocessing): %.3fs \n", executionTime);
 
         // MASTER sends to all slaves genome chunks + start index of each chunk
@@ -116,7 +172,7 @@ int main(int argc, char **argv)
         }
         else // each SLAVE receive a genome chunk + start index of each chunk
         {
-            MPI_Recv(chunk, chunkSizeExtended, MPI_CHAR, 0, TAG_CHUNK, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            MPI_Recv(chunk, chunkSizeExtended, MPI_BYTE, 0, TAG_CHUNK, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
             MPI_Recv(&chunkStartIndex, 1, MPI_LONG, 0, TAG_START_INDEX, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
             if (VERBOSE)
             {

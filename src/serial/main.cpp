@@ -20,6 +20,10 @@ int main(int argc, char **argv)
         char *genome = readFile(argv[1]);
         char *pattern = readFile(argv[2]);
 
+        clock_t readfile = clock();
+        double executionTime = (double)(readfile - startTimer) / CLOCKS_PER_SEC;
+        printf("Execution time (read file): %.3fs\n", executionTime);
+
         genome = preprocessing(genome);
         pattern = preprocessing(pattern);
 
@@ -29,7 +33,7 @@ int main(int argc, char **argv)
         int patternSize = strlen(pattern);
 
         clock_t checkpoint = clock();
-        double executionTime = (double)(checkpoint - startTimer) / CLOCKS_PER_SEC;
+        executionTime = (double)(checkpoint - readfile) / CLOCKS_PER_SEC;
         printf("Execution time (preprocessing): %.3fs\n", executionTime);
 
         // Computes the suffix array
