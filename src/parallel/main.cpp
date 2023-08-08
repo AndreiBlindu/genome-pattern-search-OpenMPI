@@ -78,7 +78,7 @@ int main(int argc, char **argv)
         }
         MPI_Barrier(MPI_COMM_WORLD);
 
-        long chunkSize = genomeSize / (SIZE - 1);
+        long chunkSize = genomeSize / SIZE;
         long chunkSizeExtended = chunkSize + patternSize;
         char *chunk = (char *)malloc(chunkSizeExtended);
         long chunkStartIndex = 0;
@@ -103,12 +103,16 @@ int main(int argc, char **argv)
         {
             for (int s = 1; s < SIZE; s++)
             {
-                memcpy(chunk, &genome[chunkSize * (s - 1)], chunkSizeExtended);
+                memcpy(chunk, &genome[chunkSize * s], chunkSizeExtended);
                 MPI_Send(chunk, chunkSizeExtended, MPI_CHAR, s, TAG_CHUNK, MPI_COMM_WORLD);
 
-                chunkStartIndex = chunkSize * (s - 1);
+                chunkStartIndex = chunkSize * s;
                 MPI_Send(&chunkStartIndex, 1, MPI_LONG, s, TAG_START_INDEX, MPI_COMM_WORLD);
             }
+
+            // the MASTER works on the first chunks
+            memcpy(chunk, &genome[0], chunkSizeExtended);
+            chunkStartIndex = 0;
         }
         else // each SLAVE receive a genome chunk + start index of each chunk
         {
@@ -118,27 +122,27 @@ int main(int argc, char **argv)
             {
                 printf("[MPI process %d] Received chunk start index: %lu\n", RANK, chunkStartIndex);
             }
+        }
 
-            chunk = addTermination(chunk);
-            chunkSizeExtended++;
+        chunk = addTermination(chunk);
+        chunkSizeExtended++;
 
-            // Computes the suffix array
-            int *suffixArr = (int *)malloc(chunkSizeExtended * sizeof(int));
-            suffixArr = computeSuffixArray(chunk, chunkSizeExtended);
+        // Computes the suffix array
+        int *suffixArr = (int *)malloc(chunkSizeExtended * sizeof(int));
+        suffixArr = computeSuffixArray(chunk, chunkSizeExtended);
 
-            // Adds to the output array the last char
-            // of each rotation
-            char *bwtArr = findLastChar(chunk, suffixArr, chunkSizeExtended);
+        // Adds to the output array the last char
+        // of each rotation
+        char *bwtArr = findLastChar(chunk, suffixArr, chunkSizeExtended);
 
-            int matchIndex = bwtSearch(bwtArr, suffixArr, chunkSizeExtended, pattern, patternSize, chunkStartIndex);
-            if (matchIndex != -1)
-            {
-                printf("Found match at index %d\n", matchIndex);
-            }
-            else
-            {
-                printf("No match found!\n");
-            }
+        int matchIndex = bwtSearch(bwtArr, suffixArr, chunkSizeExtended, pattern, patternSize, chunkStartIndex);
+        if (matchIndex != -1)
+        {
+            printf("[%d] Found match at index %d\n", RANK, matchIndex);
+        }
+        else
+        {
+            printf("[%d] No match found!\n", RANK);
         }
 
         double stopTimer = MPI_Wtime();
