@@ -10,7 +10,6 @@
 // mpicc -o [exec_name] [source_name] <-- compile
 // mpirun -n [nodes] [exec_name] <-- run
 
-#define TAG_PRE 99
 #define TAG_CHUNK 100
 #define TAG_START_INDEX 101
 
@@ -68,7 +67,7 @@ int main(int argc, char **argv)
             printf("Execution time (read file): %.3fs \n", executionTime);
         }
 
-        // MASTER communicates genome via broadcast
+        // MASTER communicates genome size via broadcast
         // This is necessary because SLAVES must know how much memory to allocate
         MPI_Bcast(&genomeSize, 1, MPI_INT, 0, MPI_COMM_WORLD);
         if (RANK != 0)
@@ -98,6 +97,8 @@ int main(int argc, char **argv)
         int *chunkSizesList = (int*)malloc(SIZE);
         int *displ = (int*)malloc(SIZE);
         MPI_Gather(&chunkSize, 1, MPI_INT, chunkSizesList, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
+        int totGenSize = 0;
         if (RANK == 0)
         {
             for (int i=0; i<SIZE; i++)
@@ -107,12 +108,21 @@ int main(int argc, char **argv)
                 {
                     displ[i] += chunkSizesList[j];
                 }
+                totGenSize += chunkSizesList[i];
             }
+
+            genome = (char*)malloc(totGenSize);
         }
         MPI_Barrier(MPI_COMM_WORLD);
 
         // and then send the preprocessed chunk to master
         MPI_Gatherv(chunk, chunkSize, MPI_CHAR, genome, chunkSizesList, displ, MPI_CHAR, 0, MPI_COMM_WORLD);
+
+        if (RANK == 0)
+        {
+            // recalculates genomeSize after preprocessing
+            genomeSize = strlen(genome);
+        }
 
         double preprocessingEnd = MPI_Wtime();
         executionTime = preprocessingEnd - readfileEnd;
