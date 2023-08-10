@@ -62,23 +62,21 @@ int main(int argc, char **argv)
 
         double readfileEnd = MPI_Wtime();
         double executionTime = readfileEnd - startTimer;
-        printf("Execution time (read file): %.3fs \n", executionTime);
 
-        // MASTER communicates genome and pattern size via broadcast
+        if (RANK == 0)
+        {
+            printf("Execution time (read file): %.3fs \n", executionTime);
+        }
+
+        // MASTER communicates genome via broadcast
         // This is necessary because SLAVES must know how much memory to allocate
         MPI_Bcast(&genomeSize, 1, MPI_LONG, 0, MPI_COMM_WORLD);
-        MPI_Bcast(&patternSize, 1, MPI_LONG, 0, MPI_COMM_WORLD);
         if (RANK != 0)
         {
             if (VERBOSE)
             {
                 printf("[MPI process %d] Received genome size: %lu\n", RANK, genomeSize);
-                printf("[MPI process %d] Received pattern size: %lu\n", RANK, patternSize);
             }
-
-            // SLAVE must allocate memory before receiving the data
-            // otherwise we get memory errors
-            pattern = (char *)malloc(patternSize);
         }
         MPI_Barrier(MPI_COMM_WORLD);
 
@@ -104,17 +102,22 @@ int main(int argc, char **argv)
 
         // all SLAVES and MASTER preprocess their chunk
         chunk = preprocessing(chunk);
+        // and then send the preprocessed chunk to master
         MPI_Gather(chunk, chunkSize, MPI_CHAR, genome, chunkSize, MPI_CHAR, 0, MPI_COMM_WORLD);
 
-        if (RANK == 0) {
-            genome = (char*)malloc(genomeSize);
+        if (RANK == 0)
+        {
+            genome = (char *)malloc(genomeSize);
             genome = strcat(chunk, genome);
 
             // recalculates genomeSize
             genomeSize = strlen(genome);
         }
-
         MPI_Barrier(MPI_COMM_WORLD);
+
+        double preprocessingEnd = MPI_Wtime();
+        executionTime = preprocessingEnd - readfileEnd;
+        printf("[%d] Execution time (preprocessing): %.3fs \n", RANK, executionTime);
 
         // MASTER communicates genome and pattern size via broadcast
         // This is necessary because SLAVES must know how much memory to allocate
@@ -150,10 +153,6 @@ int main(int argc, char **argv)
         }
         MPI_Barrier(MPI_COMM_WORLD);
 
-        double preprocessingEnd = MPI_Wtime();
-        executionTime = preprocessingEnd - readfileEnd;
-        printf("Execution time (preprocessing): %.3fs \n", executionTime);
-
         // MASTER sends to all slaves genome chunks + start index of each chunk
         if (RANK == 0)
         {
@@ -164,6 +163,14 @@ int main(int argc, char **argv)
 
                 chunkStartIndex = chunkSize * s;
                 MPI_Send(&chunkStartIndex, 1, MPI_LONG, s, TAG_START_INDEX, MPI_COMM_WORLD);
+            }
+
+            if (SIZE == 1)
+            {
+                // if there's only the MASTER node it takes as a chunk the whole genome and
+                // chunkSizeExtended is chunkSize since there's no need to consider overlapping
+                // with other nodes'chunks and we what to avoid segmentation faults
+                chunkSizeExtended = chunkSize;
             }
 
             // the MASTER works on the first chunks

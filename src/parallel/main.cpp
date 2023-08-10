@@ -60,6 +60,14 @@ int main(int argc, char **argv)
             patternSize = strlen(pattern);
         }
 
+        double preprocessingEnd = MPI_Wtime();
+        double executionTime = preprocessingEnd - startTimer;
+
+        if (RANK == 0)
+        {
+            printf("Execution time (read + preprocessing): %.3fs \n", executionTime);
+        }
+
         // MASTER communicates genome and pattern size via broadcast
         // This is necessary because SLAVES must know how much memory to allocate
         MPI_Bcast(&genomeSize, 1, MPI_LONG, 0, MPI_COMM_WORLD);
@@ -94,10 +102,6 @@ int main(int argc, char **argv)
         }
         MPI_Barrier(MPI_COMM_WORLD);
 
-        double preprocessingEnd = MPI_Wtime();
-        double executionTime = preprocessingEnd - startTimer;
-        printf("Execution time (preprocessing): %.3fs \n", executionTime);
-
         // MASTER sends to all slaves genome chunks + start index of each chunk
         if (RANK == 0)
         {
@@ -108,6 +112,14 @@ int main(int argc, char **argv)
 
                 chunkStartIndex = chunkSize * s;
                 MPI_Send(&chunkStartIndex, 1, MPI_LONG, s, TAG_START_INDEX, MPI_COMM_WORLD);
+            }
+
+            if (SIZE == 1)
+            {
+                // if there's only the MASTER node it takes as a chunk the whole genome and
+                // chunkSizeExtended is chunkSize since there's no need to consider overlapping
+                // with other nodes'chunks and we what to avoid segmentation faults
+                chunkSizeExtended = chunkSize;
             }
 
             // the MASTER works on the first chunks
