@@ -43,8 +43,8 @@ int main(int argc, char **argv)
         char *genome;
         char *pattern;
 
-        long genomeSize = 0;
-        long patternSize = 0;
+        int genomeSize = 0;
+        int patternSize = 0;
 
         // Only MASTER reads the files
         if (RANK == 0)
@@ -70,50 +70,49 @@ int main(int argc, char **argv)
 
         // MASTER communicates genome via broadcast
         // This is necessary because SLAVES must know how much memory to allocate
-        MPI_Bcast(&genomeSize, 1, MPI_LONG, 0, MPI_COMM_WORLD);
+        MPI_Bcast(&genomeSize, 1, MPI_INT, 0, MPI_COMM_WORLD);
         if (RANK != 0)
         {
             if (VERBOSE)
             {
-                printf("[MPI process %d] Received genome size: %lu\n", RANK, genomeSize);
+                printf("[MPI process %d] Received genome size: %d\n", RANK, genomeSize);
             }
         }
         MPI_Barrier(MPI_COMM_WORLD);
 
-        long chunkSize = genomeSize / SIZE;
+        int chunkSize = genomeSize / SIZE;
         char *chunk = (char *)malloc(chunkSize);
 
         // MASTER sends to all slaves genome chunks for preprocessing
-        if (RANK == 0)
-        {
-            for (int s = 1; s < SIZE; s++)
-            {
-                memcpy(chunk, &genome[chunkSize * s], chunkSize);
-                MPI_Send(chunk, chunkSize, MPI_CHAR, s, TAG_PRE, MPI_COMM_WORLD);
-            }
-
-            // the MASTER works on the first chunks
-            memcpy(chunk, &genome[0], chunkSize);
-        }
-        else // each SLAVE receive a genome chunk
-        {
-            MPI_Recv(chunk, chunkSize, MPI_CHAR, 0, TAG_PRE, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-        }
+        MPI_Scatter(genome, chunkSize, MPI_CHAR, chunk, chunkSize, MPI_CHAR, 0, MPI_COMM_WORLD);
 
         // all SLAVES and MASTER preprocess their chunk
         chunk = preprocessing(chunk);
-        // and then send the preprocessed chunk to master
-        MPI_Gather(chunk, chunkSize, MPI_CHAR, genome, chunkSize, MPI_CHAR, 0, MPI_COMM_WORLD);
+        chunkSize = strlen(chunk);
 
+        // Since the chunks have been preprocessed now they have different sizes so MPI_Gather does not
+        // work and we need to use MPI_Gatherv, that requires the MASTER process to know the displacements
+        // relative to each chunk but they are not known a priori since they depend on the chunk size after
+        // the preprocessing. That's why each node sends to the MASTER each chunkSize after the preprocessing
+        // so the MASTER can compute the displacement before calling MPI_Gatherv.
+        int *chunkSizesList = (int*)malloc(SIZE);
+        int *displ = (int*)malloc(SIZE);
+        MPI_Gather(&chunkSize, 1, MPI_INT, chunkSizesList, 1, MPI_INT, 0, MPI_COMM_WORLD);
         if (RANK == 0)
         {
-            genome = (char *)malloc(genomeSize);
-            genome = strcat(chunk, genome);
-
-            // recalculates genomeSize
-            genomeSize = strlen(genome);
+            for (int i=0; i<SIZE; i++)
+            {
+                displ[i] = 0;
+                for (int j=0; j < i; j++)
+                {
+                    displ[i] += chunkSizesList[j];
+                }
+            }
         }
         MPI_Barrier(MPI_COMM_WORLD);
+
+        // and then send the preprocessed chunk to master
+        MPI_Gatherv(chunk, chunkSize, MPI_CHAR, genome, chunkSizesList, displ, MPI_CHAR, 0, MPI_COMM_WORLD);
 
         double preprocessingEnd = MPI_Wtime();
         executionTime = preprocessingEnd - readfileEnd;
@@ -121,14 +120,14 @@ int main(int argc, char **argv)
 
         // MASTER communicates genome and pattern size via broadcast
         // This is necessary because SLAVES must know how much memory to allocate
-        MPI_Bcast(&genomeSize, 1, MPI_LONG, 0, MPI_COMM_WORLD);
-        MPI_Bcast(&patternSize, 1, MPI_LONG, 0, MPI_COMM_WORLD);
+        MPI_Bcast(&genomeSize, 1, MPI_INT, 0, MPI_COMM_WORLD);
+        MPI_Bcast(&patternSize, 1, MPI_INT, 0, MPI_COMM_WORLD);
         if (RANK != 0)
         {
             if (VERBOSE)
             {
-                printf("[MPI process %d] Received genome size: %lu\n", RANK, genomeSize);
-                printf("[MPI process %d] Received pattern size: %lu\n", RANK, patternSize);
+                printf("[MPI process %d] Received genome size: %d\n", RANK, genomeSize);
+                printf("[MPI process %d] Received pattern size: %d\n", RANK, patternSize);
             }
 
             // SLAVE must allocate memory before receiving the data
@@ -138,9 +137,9 @@ int main(int argc, char **argv)
         MPI_Barrier(MPI_COMM_WORLD);
 
         chunkSize = genomeSize / SIZE;
-        long chunkSizeExtended = chunkSize + patternSize;
+        int chunkSizeExtended = chunkSize + patternSize;
         chunk = (char *)malloc(chunkSizeExtended);
-        long chunkStartIndex = 0;
+        int chunkStartIndex = 0;
 
         // MASTER broadcasts pattern to all slaves
         MPI_Bcast(pattern, patternSize, MPI_CHAR, 0, MPI_COMM_WORLD);
@@ -162,7 +161,7 @@ int main(int argc, char **argv)
                 MPI_Send(chunk, chunkSizeExtended, MPI_CHAR, s, TAG_CHUNK, MPI_COMM_WORLD);
 
                 chunkStartIndex = chunkSize * s;
-                MPI_Send(&chunkStartIndex, 1, MPI_LONG, s, TAG_START_INDEX, MPI_COMM_WORLD);
+                MPI_Send(&chunkStartIndex, 1, MPI_INT, s, TAG_START_INDEX, MPI_COMM_WORLD);
             }
 
             if (SIZE == 1)
@@ -180,10 +179,10 @@ int main(int argc, char **argv)
         else // each SLAVE receive a genome chunk + start index of each chunk
         {
             MPI_Recv(chunk, chunkSizeExtended, MPI_BYTE, 0, TAG_CHUNK, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-            MPI_Recv(&chunkStartIndex, 1, MPI_LONG, 0, TAG_START_INDEX, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            MPI_Recv(&chunkStartIndex, 1, MPI_INT, 0, TAG_START_INDEX, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
             if (VERBOSE)
             {
-                printf("[MPI process %d] Received chunk start index: %lu\n", RANK, chunkStartIndex);
+                printf("[MPI process %d] Received chunk start index: %d\n", RANK, chunkStartIndex);
             }
         }
 
