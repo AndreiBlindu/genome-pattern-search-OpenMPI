@@ -126,7 +126,7 @@ int countNucleotide(char *str, char nucleotide)
         }
     }
 
-    //printf("# %c : %d\n", nucleotide, count);
+    printf("# %c : %d\n", nucleotide, count);
     return count;
 }
 
