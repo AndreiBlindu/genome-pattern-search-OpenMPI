@@ -140,8 +140,8 @@ int main(int argc, char **argv)
         chunkSizeExtended++;
 
         // Computes the suffix array
-        int *suffixArr = (int *)malloc(chunkSizeExtended * sizeof(int));
-        suffixArr = computeSuffixArray(chunk, chunkSizeExtended);
+        //int *suffixArr = (int *)malloc(chunkSizeExtended * sizeof(int));
+        int *suffixArr = computeSuffixArray(chunk, chunkSizeExtended);
 
         // Adds to the output array the last char
         // of each rotation

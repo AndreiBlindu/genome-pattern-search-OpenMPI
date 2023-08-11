@@ -44,6 +44,7 @@ int *computeSuffixArray(char *inputText, int textLength)
     for (int i = 0; i < textLength; i++)
         suffixArr[i] = suff[i].index;
 
+    free(suff); // avoid memory leak
     // Returns the computed suffix array
     return suffixArr;
 }
