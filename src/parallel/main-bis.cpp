@@ -111,6 +111,7 @@ int main(int argc, char **argv)
                 totGenSize += chunkSizesList[i];
             }
 
+            free(genome); // to avoid memory leak
             genome = (char*)malloc(totGenSize);
         }
         MPI_Barrier(MPI_COMM_WORLD);
@@ -144,6 +145,7 @@ int main(int argc, char **argv)
             // otherwise we get memory errors
             pattern = (char *)malloc(patternSize);
         }
+        free(chunk); // to avoid memory leak
         MPI_Barrier(MPI_COMM_WORLD);
 
         chunkSize = genomeSize / SIZE;
@@ -200,8 +202,8 @@ int main(int argc, char **argv)
         chunkSizeExtended++;
 
         // Computes the suffix array
-        int *suffixArr = (int *)malloc(chunkSizeExtended * sizeof(int));
-        suffixArr = computeSuffixArray(chunk, chunkSizeExtended);
+        //int *suffixArr = (int *)malloc(chunkSizeExtended * sizeof(int));
+        int *suffixArr = computeSuffixArray(chunk, chunkSizeExtended);
 
         // Adds to the output array the last char
         // of each rotation

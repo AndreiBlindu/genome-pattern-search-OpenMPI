@@ -4,12 +4,7 @@
 sudo su
 
 # install useful libraries
-yum install wget
-yum install perl
-yum install gcc
-yum install gcc-c++
-yum install make
-yum install git
+yum install wget perl gcc gcc-c++ make nano git
 
 # install OpenMPI
 mkdir openMPI
