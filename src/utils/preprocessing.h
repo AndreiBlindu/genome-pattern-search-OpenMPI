@@ -16,6 +16,8 @@ char *preprocessing(char *text)
             newString[j++] = toupper(text[i]);
         }
     }
+    newString[j++] = '\0';
+    newString = (char *)realloc(newString, j);
 
     return newString;
 }
@@ -24,7 +26,7 @@ char *addTermination(char *text)
 {
     int N = strlen(text);
 
-    char *newString = (char *)malloc(N+1);
+    char *newString = (char *)malloc(N + 1);
     strcpy(newString, text);
     newString[N] = '$';
 
