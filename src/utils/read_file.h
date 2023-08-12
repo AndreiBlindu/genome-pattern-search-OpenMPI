@@ -14,7 +14,6 @@ char *readFile(char *filename)
     fseek(file, 0L, SEEK_END);
     long fileSize = ftell(file);
     rewind(file);
-    printf("File size: %lu\n", fileSize);
 
     buffer = (char*)malloc(fileSize);
 

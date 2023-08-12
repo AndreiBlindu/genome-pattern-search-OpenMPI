@@ -1,5 +1,5 @@
 # download git if not installed
-yum install git
+sudo apt install git
 
 # download repo from git
 git clone https://github.com/AndreiBlindu/genome-pattern-search-OpenMPI.git
