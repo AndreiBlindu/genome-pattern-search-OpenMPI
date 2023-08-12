@@ -11,13 +11,6 @@ char *readFile(char *filename)
     // Open file for reading
     file = fopen(filename, "r");
 
-    fseek(file, 0L, SEEK_END);
-    long fileSize = ftell(file);
-    rewind(file);
-    printf("File size: %lu\n", fileSize);
-
-    buffer = (char*)malloc(fileSize);
-
     // Check if file opened successfully
     if (file == NULL)
     {
@@ -29,6 +22,17 @@ char *readFile(char *filename)
     int c;
     while ((c = fgetc(file)) != EOF)
     {
+        // If buffer is full, resize it
+        if (i >= bufferSize)
+        {
+            bufferSize += 1000;                           // increase buffer size by 1000 bytes
+            buffer = (char *)realloc(buffer, bufferSize); // resize buffer
+            if (buffer == NULL)
+            {
+                printf("Error: Memory allocation failed.\n");
+                return NULL;
+            }
+        }
         buffer[i] = c;
         i++;
     }

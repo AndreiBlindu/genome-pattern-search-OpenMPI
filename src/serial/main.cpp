@@ -19,6 +19,7 @@ int main(int argc, char **argv)
 
         char *genome = readFile(argv[1]);
         char *pattern = readFile(argv[2]);
+        printf("Before (%lu) : \n%s\n", strlen(pattern), pattern);
 
         clock_t readfile = clock();
         double executionTime = (double)(readfile - startTimer) / CLOCKS_PER_SEC;
@@ -26,6 +27,7 @@ int main(int argc, char **argv)
 
         genome = preprocessing(genome);
         pattern = preprocessing(pattern);
+        printf("After (%lu) : \n%s\n", strlen(pattern), pattern);
 
         genome = addTermination(genome);
 
