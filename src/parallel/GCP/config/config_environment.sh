@@ -22,5 +22,7 @@ sudo ldconfig
 ## sudo scp -i ./id_rsa ./id_rsa* andreiblindu@34.136.194.57:/home/andreiblindu/.ssh/
 
 ## TO MOVE FILES TO REMOTE (from folder ./myGoogleKeys)
+## sudo scp -i ./id_rsa "/Users/andreiblindu/Desktop/Università/Laurea Magistrale/Corsi/1° anno/1° semestre/Advanced Computer Architecture/Project/genome-pattern-search-OpenMPI/datasets/EntamoebaInvadens/genome.fna" andreiblindu@35.238.84.102:/home/andreiblindu/datasets/EntamoebaInvadens
+## sudo scp -i ./id_rsa "/Users/andreiblindu/Desktop/Università/Laurea Magistrale/Corsi/1° anno/1° semestre/Advanced Computer Architecture/Project/genome-pattern-search-OpenMPI/datasets/EntamoebaInvadens/pattern.txt" andreiblindu@35.238.84.102:/home/andreiblindu/datasets/EntamoebaInvadens
 ## sudo scp -i ./id_rsa "/Users/andreiblindu/Desktop/Università/Laurea Magistrale/Corsi/1° anno/1° semestre/Advanced Computer Architecture/Project/genome-pattern-search-OpenMPI/datasets/FormicaExsecta/genome.fna" andreiblindu@35.238.84.102:/home/andreiblindu/datasets/FormicaExsecta
 ## sudo scp -i ./id_rsa "/Users/andreiblindu/Desktop/Università/Laurea Magistrale/Corsi/1° anno/1° semestre/Advanced Computer Architecture/Project/genome-pattern-search-OpenMPI/datasets/FormicaExsecta/pattern.txt" andreiblindu@35.238.84.102:/home/andreiblindu/datasets/FormicaExsecta
