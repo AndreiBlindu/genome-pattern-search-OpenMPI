@@ -13,4 +13,6 @@ cd genome-pattern-search-OpenMPI/src/parallel
 ## I have to move the file a.out out of the directory of the git project because there for some reason I cannot execute it
 ## so I do it cp a.out /home/andreiblindu/
 ## Then to run I use
-## mpirun --hostfile ./genome-pattern-search-OpenMPI/src/parallel/hostfile -np 2 ./a.out ./genome-pattern-search-OpenMPI/datasets/EscherichiaColi/genome.fna ./genome-pattern-search-OpenMPI/datasets/EscherichiaColi/pattern.txt
+## mpirun --hostfile hostfile -np 2 ./a.out ./genome-pattern-search-OpenMPI/datasets/EscherichiaColi/genome.fna ./genome-pattern-search-OpenMPI/datasets/EscherichiaColi/pattern.txt
+## mpirun --hostfile hostfile -np 6 ./a.out ./datasets/EntamoebaInvadens/genome.fna ./datasets/EntamoebaInvadens/pattern.txt
+## mpirun --hostfile hostfile -np 2 ./a.out ./datasets/FormicaExsecta/genome.fna ./datasets/FormicaExsecta/pattern.txt

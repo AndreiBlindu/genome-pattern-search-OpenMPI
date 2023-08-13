@@ -26,3 +26,5 @@ sudo ldconfig
 ## sudo scp -i ./id_rsa "/Users/andreiblindu/Desktop/Università/Laurea Magistrale/Corsi/1° anno/1° semestre/Advanced Computer Architecture/Project/genome-pattern-search-OpenMPI/datasets/EntamoebaInvadens/pattern.txt" andreiblindu@35.238.84.102:/home/andreiblindu/datasets/EntamoebaInvadens
 ## sudo scp -i ./id_rsa "/Users/andreiblindu/Desktop/Università/Laurea Magistrale/Corsi/1° anno/1° semestre/Advanced Computer Architecture/Project/genome-pattern-search-OpenMPI/datasets/FormicaExsecta/genome.fna" andreiblindu@35.238.84.102:/home/andreiblindu/datasets/FormicaExsecta
 ## sudo scp -i ./id_rsa "/Users/andreiblindu/Desktop/Università/Laurea Magistrale/Corsi/1° anno/1° semestre/Advanced Computer Architecture/Project/genome-pattern-search-OpenMPI/datasets/FormicaExsecta/pattern.txt" andreiblindu@35.238.84.102:/home/andreiblindu/datasets/FormicaExsecta
+
+## sudo scp -i ./id_rsa "/Users/andreiblindu/Desktop/Università/Laurea Magistrale/Corsi/1° anno/1° semestre/Advanced Computer Architecture/Project/genome-pattern-search-OpenMPI/src/utils/read_file (copia).h" andreiblindu@35.222.191.221:/home/andreiblindu/genome-pattern-search-OpenMPI/src/utils

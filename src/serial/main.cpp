@@ -18,6 +18,7 @@ int main(int argc, char **argv)
         clock_t startTimer = clock();
 
         char *genome = readFile(argv[1]);
+        printf("Dataset size: %lu\n", strlen(genome));
         char *pattern = readFile(argv[2]);
 
         clock_t readfile = clock();
