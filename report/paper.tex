@@ -85,9 +85,9 @@ In bioinformatics applications, the genome and the genes are usually considered 
 The genomes used for this analysis have been taken from the NCBI website\cite{ncbi}. \\
 Genomes of different sizes have been used in order to study how the performance changes with respect to the input dataset dimension:
 \begin{itemize}
-    \item \emph{Escherichia coli}, bacteria commonly found in the lower intestine of warm-blooded organisms\cite{ecoli}, 4.6MB \cite{ecoli dataset}
-    \item \emph{Entamoeba invadens}, an amoebozoa parasite of reptiles\cite{entamoeba}, 40.9MB \cite{entamoeba dataset}
-    \item \emph{Formica exsecta}, is a species of ant found from Western Europe to Asia \cite{formica}, 277.6MB \cite{formica dataset}
+    \item \emph{Escherichia Coli}, bacteria commonly found in the lower intestine of warm-blooded organisms\cite{ecoli}, 4.6MB \cite{ecoli dataset}
+    \item \emph{Entamoeba Invadens}, an amoebozoa parasite of reptiles\cite{entamoeba}, 40.9MB \cite{entamoeba dataset}
+    \item \emph{Formica Exsecta}, is a species of ant found from Western Europe to Asia \cite{formica}, 277.6MB \cite{formica dataset}
 \end{itemize}
 
 
@@ -131,7 +131,7 @@ The Burrows-Wheeler Transform and the pattern matching are implemented in three 
     \item \textbf{Pattern search}: it iterates the genome string 4 times in order to count the number of occurences for each of the four nucleobases; then assuming we are in the case that a match is found we have to iterate over all the nucleobases in the pattern and for each iteration we have to execute the rank function twice; the cost of the rank computation depends on the index from which we want to count the number of occurences of a character in the BWT array, so on average we can say it is $genomeSize/2$. So we can estimate the total computational cost of the pattern search as
     $$O(4*genomeSize + patternSize*genomeSize)$$
 \end{enumerate}
-The following table summarizes the computational costs of the different steps. More precise results could be estimated using profiling tools.
+The following table summarizes the computational costs of the different steps.
 \begin{center}
 \begin{tabular}{|| c c ||}
 \hline
@@ -145,15 +145,64 @@ Step & Cost (N. operations) \\
 \hline
 \end{tabular}
 \end{center}
+In order to have a more realistic performance evaluation of each section of the code, execution times have been measured considering the combinations of genome and pattern sizes shown in the following table (the same ones will be used for testing the parallel implementation on GCP).
+\begin{center}
+\begin{tabular}{|| c c c ||}
+\hline
+Dataset & Genome size & Pattern size \\
+\hline
+ Escherichia Coli & 4699745 & 933 \\
+ Entamoeba Invadens & 41522539 & 654 \\
+ Formica Exsecta & 283043175 & 200 \\
+\hline
+\end{tabular}
+\end{center}
+The average times measured are shown in the table below. The serial code has been executed on a MacBook Pro, Apple M1 Pro chip, 16GB RAM. More precise results could be obtained by using more advanced profiling tools and testing the code on different devices and with more input combinations.
+\begin{center}
+\begin{tabular}{|| c c c c ||}
+\hline
+Dataset & Step & Time(s) & \% \\
+\hline
+ E. Coli & Read data & 0,105 & 0,629 \\
+    & Preprocess data & 0,086 & 0,516 \\
+    & Suffix array & 1,669 & 10,006 \\
+    & BWT last column & 0,012 & 0,072 \\
+    & Pattern search & 14,808 & 88,777 \\
+    & Total & 16,68 & 100 \\
+\hline
+E. Invadens & Read data & 0,712 & 0,681 \\
+    & Preprocess data & 0,742 & 0,71 \\
+    & Suffix array & 19,903 & 19,035 \\
+    & BWT last column & 0,403 & 0,385 \\
+    & Pattern search & 82,801 & 79,189 \\
+    & Total & 104,561 & 100 \\
+\hline
+F. Exsecta & Read data & 4,738 & 1,581 \\
+    & Preprocess data & 4,864 & 1,623 \\
+    & Suffix array & 152,034 & 50,732 \\
+    & BWT last column & 3,357 & 1,12 \\
+    & Pattern search & 134,689 & 44,944 \\
+    & Total & 299,682 & 100 \\
+\hline
+\end{tabular}
+\label{fig:times_table}
+\end{center}
+This results are in line with what can be expected from the theoretical cost analysis previously done.
 
 \section{A priori study of available parallelism}
 The serial version of the code has been analyzed in order to understand which parts can be parallelized and what enhancement can be theoretically expected by executing the code on multiple CPUs cooperating with each other in parallel.\\
 In order to estimate the improvement in performance, in terms of speedup, the \textbf{Amdalh's law} can be used:
 $$ Speedup(N) = \frac{1}{S + \frac{P}{N}} $$
 Where N is the number of nodes (virtual CPUs) that are exploited, S is the fraction of the code that cannot be parallelized and P is the fraction that can be parallelized. It can be noticed that obviously S+P=1 and the greater is P with respect to S the more speedup is obtained, at least theoretically.\\
-In the following analysis parts of the code execution that are less relevant, such as the import of the libraries and the check of the parameters passed to the \emph{main()} function, have been neglected and only the most important blocks, discussed in the previous section, have been considered.\\
-The only parts that cannot be parallelized, at least not efficiently or simply, are the reading and preprocessing of the genome and gene files. Even the string matching algorithm based on the Burrows-Wheeler Transform is intrinsically serial, due to loop-carried dependencies, but it is possible to parallelize it by distributing chunks of the genome on different nodes so that the nodes can perform the BWT pattern search in parallel each on a different genome portion, smaller than the whole dataset. The choice of this strategy is also motivated by the fact that, as it can be noticed from the table in the previous section, the computational costs of the operations are highly dependent on the genome dataset size, so we can expect an enhancement by distributing it among different nodes. The methods and issues regarding the parallel implementation will be discussed in greater details in the next section. Whereas it is not possible to distribute the pattern string across different nodes because they all need the whole pattern to be able to find it.\\
-
+The only parts that cannot be parallelized, at least not efficiently or simply, are the reading and preprocessing of the genome and gene files. Even the string matching algorithm based on the Burrows-Wheeler Transform is intrinsically serial, due to loop-carried dependencies, but it is possible to parallelize it by distributing chunks of the genome on different nodes so that the nodes can perform the BWT pattern search in parallel each on a different genome portion, smaller than the whole dataset. The choice of this strategy is also motivated by the fact that, as it can be noticed from the table in the previous section, the computational costs of the operations are highly dependent on the genome dataset size, so we can expect an enhancement by distributing it among different nodes. Whereas it is not possible to distribute the pattern string across different nodes because they all need the whole pattern to be able to find it. The methods and issues regarding the parallel implementation will be discussed in greater details in the next section. \\
+The Amdalh's law has been applied after computing the S and P values for each dataset using the execution times in the table \ref{fig:times_table}. The expected theoretical speedups calculated for all datasets are shown in Figure \ref{fig:theoretical-speedup-label}.
+\begin{figure}
+    \centering
+    \includegraphics[width=0.5\textwidth]{images/theoretical_speedup.png}
+    \caption{Theoretical Speedup}
+    \label{fig:theoretical-speedup-label}
+\end{figure}
+\\It can be noticed that for larger datasets the expected speedup is lower than for smaller ones due to the non-parallelizable fraction S being greater (as shown in the execution times table \ref{fig:times_table}) probably because there are overheads due to the allocation and management of a bigger amount of memory.
 
 \section{OpenMPI parallel implementation}
 The parallel version of the code has been developed using OpenMPI (Message Passing Interface) in order to manage different processes running in parallel and their communication on a distributed memory system. In addition to the parameters discussed for the serial implementation, in the parallel version is important to specify the number of CPUs on which to run the program; an error will be generated if the number specified exceedes the capability of the machine or cluster of machines you are running the command on. Moreover, MPI allows to specify an hostfile containing the IP addresses of the machines to execute the code on and the number of slots (virtual CPUs) on each machine; this allows to easily setup a cluster of machines on which to run the tests, as discussed in the next section. \\

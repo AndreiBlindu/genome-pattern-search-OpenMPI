@@ -33,17 +33,23 @@ int main(int argc, char **argv)
         int genomeSize = strlen(genome);
         int patternSize = strlen(pattern);
 
-        clock_t checkpoint = clock();
-        executionTime = (double)(checkpoint - readfile) / CLOCKS_PER_SEC;
+        clock_t prepTime = clock();
+        executionTime = (double)(prepTime - readfile) / CLOCKS_PER_SEC;
         printf("Execution time (preprocessing): %.3fs\n", executionTime);
 
         // Computes the suffix array
         int *suffixArr = (int *)malloc(genomeSize * sizeof(int));
         suffixArr = computeSuffixArray(genome, genomeSize);
+        clock_t suffixArrTime = clock();
+        executionTime = (double)(suffixArrTime - prepTime) / CLOCKS_PER_SEC;
+        printf("Execution time (compute suffix array): %.3fs\n", executionTime);
 
         // Adds to the output array the last char
         // of each rotation
         char *bwtArr = findLastChar(genome, suffixArr, genomeSize);
+        clock_t lastCharTime = clock();
+        executionTime = (double)(lastCharTime - suffixArrTime) / CLOCKS_PER_SEC;
+        printf("Execution time (compute last column): %.3fs\n", executionTime);
 
         int matchIndex = bwtSearch(bwtArr, suffixArr, genomeSize, pattern, patternSize, 0);
         if (matchIndex != -1)
@@ -54,9 +60,12 @@ int main(int argc, char **argv)
         {
             printf("No match found!\n");
         }
+        clock_t searchTime = clock();
+        executionTime = (double)(searchTime - lastCharTime) / CLOCKS_PER_SEC;
+        printf("Execution time (search pattern): %.3fs\n", executionTime);
 
         clock_t stopTimer = clock();
-        executionTime = (double)(stopTimer - checkpoint) / CLOCKS_PER_SEC;
+        executionTime = (double)(stopTimer - prepTime) / CLOCKS_PER_SEC;
         printf("Execution time (search): %.3fs\n", executionTime);
 
         executionTime = (double)(stopTimer - startTimer) / CLOCKS_PER_SEC;
