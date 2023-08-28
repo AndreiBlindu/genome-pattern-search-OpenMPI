@@ -145,6 +145,7 @@ Step & Cost (N. operations) \\
 \hline
 \end{tabular}
 \end{center}
+It can be noticed that the most expensive operations are the suffix array computation and the pattern search, so these are the steps we are most interested in parallelizing. \\
 In order to have a more realistic performance evaluation of each section of the code, execution times have been measured considering the combinations of genome and pattern sizes shown in the following table (the same ones will be used for testing the parallel implementation on GCP).
 \begin{center}
 \begin{tabular}{|| c c c ||}
@@ -187,14 +188,14 @@ F. Exsecta & Read data & 4,738 & 1,581 \\
 \end{tabular}
 \label{fig:times_table}
 \end{center}
-This results are in line with what can be expected from the theoretical cost analysis previously done.
+This results are in line with what can be expected from the theoretical cost analysis previously done. It can be noticed that the larger the dataset the bigger the impact of the reading and preprocessing on the execution times.
 
 \section{A priori study of available parallelism}
 The serial version of the code has been analyzed in order to understand which parts can be parallelized and what enhancement can be theoretically expected by executing the code on multiple CPUs cooperating with each other in parallel.\\
 In order to estimate the improvement in performance, in terms of speedup, the \textbf{Amdalh's law} can be used:
 $$ Speedup(N) = \frac{1}{S + \frac{P}{N}} $$
 Where N is the number of nodes (virtual CPUs) that are exploited, S is the fraction of the code that cannot be parallelized and P is the fraction that can be parallelized. It can be noticed that obviously S+P=1 and the greater is P with respect to S the more speedup is obtained, at least theoretically.\\
-The only parts that cannot be parallelized, at least not efficiently or simply, are the reading and preprocessing of the genome and gene files. Even the string matching algorithm based on the Burrows-Wheeler Transform is intrinsically serial, due to loop-carried dependencies, but it is possible to parallelize it by distributing chunks of the genome on different nodes so that the nodes can perform the BWT pattern search in parallel each on a different genome portion, smaller than the whole dataset. The choice of this strategy is also motivated by the fact that, as it can be noticed from the table in the previous section, the computational costs of the operations are highly dependent on the genome dataset size, so we can expect an enhancement by distributing it among different nodes. Whereas it is not possible to distribute the pattern string across different nodes because they all need the whole pattern to be able to find it. The methods and issues regarding the parallel implementation will be discussed in greater details in the next section. \\
+The only parts that cannot be parallelized, at least not efficiently or simply, are the reading and preprocessing of the genome and gene files. Even the string matching algorithm based on the Burrows-Wheeler Transform is intrinsically serial, due to loop-carried dependencies, but it is possible to parallelize it by distributing chunks of the genome on different nodes so that the nodes can perform the BWT pattern search in parallel each on a different genome portion, smaller than the whole dataset. The choice of this strategy is also motivated by the fact that, as it can be noticed from the table in the previous section, the computational costs of the operations are highly dependent on the genome dataset size, so we can expect an enhancement by distributing it among different nodes. Whereas it is not possible to distribute the pattern string across different nodes because they all need to have the whole pattern to be able to find it. The methods and issues regarding the parallel implementation will be discussed in greater details in the next section. \\
 The Amdalh's law has been applied after computing the S and P values for each dataset using the execution times in the table \ref{fig:times_table}. The expected theoretical speedups calculated for all datasets are shown in Figure \ref{fig:theoretical-speedup-label}.
 \begin{figure}
     \centering
@@ -209,7 +210,7 @@ The parallel version of the code has been developed using OpenMPI (Message Passi
 The parallel implementation of the code performs the following steps:
 \begin{enumerate}
     \item The master reads the genome and pattern files and performs the preprocessing; since these operations are not-parallelizable they are executed only on a single master node.
-    \item The master calculates and broadcasts to all slaves the genome size and pattern size. This is important because slaves must know how much memory to allocate before receiving the data in order to avoid segmentation fault errors.
+    \item The master calculates and broadcasts to all slaves the genome size and pattern size. This is important because slaves must know how much memory to allocate before receiving the data in order to avoid segmentation fault errors. A barrier is put in place in order to be sure all nodes have received the message and allocated memory before going on.
     \item The master broadcasts the pattern to all slaves, after they have allocated the proper amount of memory.
     \item The master splits the genome string in different chunks and sends each slave a chunk and the start index of that chunk with respect to the whole string. The most simple and naive way to perform the splitting is equally divide the genome among the number of nodes. But how can we make sure that genes falling between two different chunks are detected? It can happen that the pattern we are searching for is between two different chunks so if all slaves apply the Burrows-Wheeler search algorithm on its own chunk none is going to find it since none has the whole pattern in its chunk. In order to avoid this nasty problem a simple solution is to have overlapping areas between neighbouring chunks equal to the size of the pattern, so if the pattern is there we make sure it will be detected by at least one of the nodes processing the neighbouring chunks. This solution also takes care of another problem: the integer division of the genome between a finite integer number of nodes leaves out a reminder chunk, but if we suppose that the pattern size is greater than the number of nodes (assumption that is always valid in the experiments performed in this project) then the eventual reminder is covered by extending the chunk size with the pattern size. So each slave allocates memory for the chunks as follows:
     \begin{lstlisting}[language=c++]
@@ -222,15 +223,106 @@ The parallel implementation of the code performs the following steps:
 
 
 \section{Performance and scalability analysis}
+The parallel implementation of the code has been tested and debugged locally at first in order to make sure everything was working properly. Once obtained a working version that achieved reasonable performance on a local machine, the code has been tested on different types of clusters instanced on Google Cloud Platform in order to evaluate its scalability. \\
+The Google Cloud Platform (GCP) offers a suite of cloud computing services including data storage and management, computing, networking, big data and machine learning tools, allowing businesses to build, deploy and scale their applications and services on the same infrastructure as Google. \\
+The performance of the parallel version of the code has been tested and evaluated on four different clusters:
+\begin{itemize}
+    \item \textbf{Fat cluster}: three e2-highmem-8 (8 vCPU, 4 core, 64GB RAM)
+    \begin{itemize}
+        \item \textbf{Intra-regional}: same region (us-central1-a)
+        \item \textbf{Infra-regional}: different regions (us-central1-a, europe-north1-a, asia-east1-b)
+    \end{itemize}
+    \item \textbf{Light cluster}: six e2-highmem-2 (2 vCPU, 1 core, 16GB RAM)
+    \begin{itemize}
+        \item \textbf{Intra-regional}: same region (us-central1-a)
+        \item \textbf{Infra-regional}: different regions (us-central1-a, us-west2-a, europe-north1-a, europe-west9-a, asia-east1-b, asia-south2-a)
+    \end{itemize}
+\end{itemize}
+The tests have been performed by setting up a hostfile on the master containing the local IP addresses and the number of slots (vCPU) of each node of the cluster and then running the following command \\
+\begin{lstlisting}[language=bash]
+mpirun --hostfile hostfile -np [N] ./a.out [genome_path] [pattern_path]
+\end{lstlisting}
+The execution times measured for each execution have been collected in a \emph{.csv} file where a first analysis was performed to compute the speedup and efficiency using excel features. Speedup and efficiency are important metrics needed to assess strong and weak scalability. \\
+\textbf{Strong scalability} is the capability of a parallel program to reduce the computational time of a fixed size problem by adding more processors. Strong scalability is important to consider when we deal with a fixed amount of data and we want to speedup the execution of the computation. A simple way to evaluate it is computing the speedup as the ratio between the time t(1) needed to complete a serial task, and the amount of time t(N) needed to complete the same unit of work with N processing elements (parallel task)\cite{hpc scaling}:
+$$ Speedup(N) = \frac{t(1)}{t(N)} $$
+Whereas, \textbf{weak scalability} is the capability of a parallel program to keep the computational time fixed while increasing the size of the problem. Weak scalability is important to consider when we deal with problems that can increase in size and we want to keep the computation efficient by distributing it on different nodes. A simple way to assess weak scalability is to compute efficiency as the ratio between the time t(1) needed to complete a work unit with 1 processing element, and the amount of time t(N) needed to complete N of the same work units with N processing elements\cite{hpc scaling}:
+$$ Efficiency(N) = \frac{t(1)}{t(N)} $$
+Efficiency can also be estimated as the ratio between the speedup and the number of processing units used:
+$$ Efficiency = \frac{Speedup}{N} $$
+In the next subsections the performance on the different types of clusters will be discussed. All the following graphs have been generated from the measures collected using the python script that can be found in the project repository\cite{analysis me}.
 
 \subsection{Fat cluster}
+A fat cluster consists of a few powerful machines, each hosting a larger number of virtual cores and proper memory. The advantage of this type of cluster is that it can be used for High Performance Computing (HPC) since each machine is powerful and can handle significant workloads. Moreover, since there are usually less machines involved compared to a light cluster, there is a lower network latency and this can become relevant when a lot of data transfers and communications between the different nodes are required.\\
+The tests have been performed on two fat clusters: one containing only machines in the same geographical area (intra-regional) and the other containing machines located in different regions (infra-regional), as described above, in order to investigate whether there is a difference in performance.
+
 \subsubsection{Intra-regional}
+The strong and weak scalability of the parallel implementation on a Fat Intra-regional cluster have been assessed using the speedup and efficiency formulas previously discussed and the results are shown in Figures \ref{fig:fat-intra-strong} and \ref{fig:fat-intra-weak}. \\
+\begin{figure}
+    \centering
+    \includegraphics[width=0.5\textwidth]{images/fat_intra_strong.png}
+    \caption{Strong scalability for Fat Intra-regional cluster }
+    \label{fig:fat-intra-strong}
+\end{figure}
+The speedup obtained in Figure \ref{fig:fat-intra-strong} can be considered a good result and it is in line with what was expected from the a priori analysis, it is only slightly lower due to the process synchronization and data transfer overheads that have a negative impact on the execution times especially for the case of larger datasets and many virtual cores. \\
+\begin{figure}
+    \centering
+    \includegraphics[width=0.5\textwidth]{images/fat_intra_weak.png}
+    \caption{Weak scalability for Fat Intra-regional cluster }
+    \label{fig:fat-intra-weak}
+\end{figure}
+Whereas, if we consider the weak scalability shown in Figure \ref{fig:fat-intra-weak}, we can notice that the efficiency drops faster for larger datasets, probably because the larger the dataset the more communication overhead is required to transfer it across the different nodes and also the memory allocation for the single node becomes more computationally expensive. 
+
 \subsubsection{Infra-regional}
+The same experiments have been executed on a Fat Infra-regional cluster and as it can be noticed from Figures \ref{fig:fat-infra-strong} and \ref{fig:fat-infra-weak} the performance in terms of both strong and weak scalability is much worse than in the intra-regional case. \\
+It is interesting to notice (Figure \ref{fig:fat-infra-strong}) that for smaller datasets, such as the \emph{Escherichia Coli} dataset, increasing the number of virtual cores beyond 8 vCores actually decreases the speedup; since 8 vCores is the capability of a single machine probably the reason for this strange behaviour is that just establishing the connection between machines far away from each other may require an overhead that is very large compared to both the data transfer overhead and the time needed to process the data in the case of a very small dataset. Even for medium and larger datasets we reach a maximum number of virtual cores after which the speedup decreases. Moreover, for all datasets the speedup obtained is lower than the intra-regional scenario for the same number of virtual cores. \\ 
+This behaviour is confirmed by looking at the weak scalability plot (Figure \ref{fig:fat-infra-weak}) where we can notice that the efficiency drops much faster than the intra-regional case, because transfering data between machines located in different geographical regions demands a larger overhead. The efficiency drops faster for the smaller dataset for the reason discussed previously. \\
+\begin{figure}
+    \centering
+    \includegraphics[width=0.5\textwidth]{images/fat_infra_strong.png}
+    \caption{Strong scalability for Fat Infra-regional cluster }
+    \label{fig:fat-infra-strong}
+\end{figure}
+\begin{figure}
+    \centering
+    \includegraphics[width=0.5\textwidth]{images/fat_infra_weak.png}
+    \caption{Weak scalability for Fat Infra-regional cluster }
+    \label{fig:fat-infra-weak}
+\end{figure}
+We can conclude that the intra-regional configuration is better in terms of both strong and weak scalability than the infra-regional cluster, that is not recommendable especially for small datasets.
 
 \subsection{Light cluster}
-\subsubsection{Intra-regional}
-\subsubsection{Infra-regional}
+A light cluster is designed with many light-weighted virtual cores. The advantages of this configuration are that it is more cost and energy effective, since the single machine consumes less power, and it is more resilient since it relies on a larger number of machines. \\
+As in the fat cluster experiments, the tests have been performed both on a intra-regional and infra-regional cluster in order to investigate the difference in performance. 
 
+\subsubsection{Intra-regional}
+The results for strong and weak scalability on a Light Intra-region cluster are shown in Figures \ref{fig:light-intra-strong} and \ref{fig:light-intra-weak}. \\
+\begin{figure}
+    \centering
+    \includegraphics[width=0.5\textwidth]{images/light_intra_strong.png}
+    \caption{Strong scalability for Light Intra-regional cluster }
+    \label{fig:light-intra-strong}
+\end{figure}
+\begin{figure}
+    \centering
+    \includegraphics[width=0.5\textwidth]{images/light_intra_weak.png}
+    \caption{Weak scalability for Light Intra-regional cluster }
+    \label{fig:light-intra-weak}
+\end{figure}
+Looking at the strong scalability plot (Figure \ref{fig:light-intra-strong}) it can be noticed that the speedup
+
+\subsubsection{Infra-regional}
+\begin{figure}
+    \centering
+    \includegraphics[width=0.5\textwidth]{images/light_infra_strong.png}
+    \caption{Strong scalability for Light Infra-regional cluster }
+    \label{fig:light-infra-strong}
+\end{figure}
+\begin{figure}
+    \centering
+    \includegraphics[width=0.5\textwidth]{images/light_infra_weak.png}
+    \caption{Weak scalability for Light Infra-regional cluster }
+    \label{fig:light-infra-weak}
+\end{figure}
 
 \section{Conclusions}
 
@@ -249,6 +341,10 @@ The parallel implementation of the code performs the following steps:
 \url{https://mr-easy.github.io/2019-12-19-burrows-wheeler-alignment-part-1/}
 \bibitem{bwt.h me}
 \url{https://github.com/AndreiBlindu/genome-pattern-search-OpenMPI/blob/main/src/utils/bwt.h}
+\bibitem{analysis me}
+\url{https://github.com/AndreiBlindu/genome-pattern-search-OpenMPI/blob/main/analysis/analysis.ipynb}
+\bibitem{hpc scaling}
+\url{https://hpc-wiki.info/hpc/Scaling}
 \end{thebibliography}
 
 
