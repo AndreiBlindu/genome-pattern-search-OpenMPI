@@ -291,7 +291,7 @@ This behaviour is confirmed by looking at the weak scalability plot (Figure \ref
 We can conclude that the intra-regional configuration is better in terms of both strong and weak scalability than the infra-regional cluster, that is not recommendable especially for small datasets.
 
 \subsection{Light cluster}
-A light cluster is designed with many light-weighted virtual cores. The advantages of this configuration are that it is more cost and energy effective, since the single machine consumes less power, and it is more resilient since it relies on a larger number of machines. \\
+A light cluster is a cluster designed with many light-weighted virtual cores. The advantages of this configuration are that it is more cost and energy effective, since the single machine consumes less power, and it is more resilient since it relies on a larger number of machines. \\
 As in the fat cluster experiments, the tests have been performed both on a intra-regional and infra-regional cluster in order to investigate the difference in performance. 
 
 \subsubsection{Intra-regional}
@@ -308,9 +308,11 @@ The results for strong and weak scalability on a Light Intra-region cluster are 
     \caption{Weak scalability for Light Intra-regional cluster }
     \label{fig:light-intra-weak}
 \end{figure}
-Looking at the strong scalability plot (Figure \ref{fig:light-intra-strong}) it can be noticed that the speedup
+As in the previous cases, strong scalability has been evaluated through the computation of the speedup (Figure \ref{fig:light-intra-strong}), which can be considered a good enhancement and is similar to the results obtained for the fat intra-regional cluster. \\
+Similarly to the fat intra-regional custer, also in this case it can be noticed that efficiency drops faster for larger datasets that are indeed less weakly scalable on intra-regional clusters compared to smaller ones (Figure \ref{fig:light-intra-weak}) since there is a greater overhead for transfering the data between different nodes.
 
 \subsubsection{Infra-regional}
+Finally, the same experiments have been conducted on the light infra-regional cluster. The results are shown in Figures \ref{fig:light-infra-strong} and \ref{fig:light-infra-weak}. We can observe a behaviour similar to the results obtained for the execution on the fat infra-regional cluster for both the strong and weak scalability. Indeed, the speedup is lower than the corresponding values for the light intra-regional cluster, especially for the smaller dataset, and it tends to decrease beyond a certain number of virtual cores. Also the efficiency (Figure \ref{fig:light-infra-weak}) results are similar to those obtained for the fat infra-regional cluster (Figure \ref{fig:fat-infra-weak}) showing that even in a light cluster the infra-regional configuration is less weakly scalable, especially for small datasets, than the intra-regional counterpart. 
 \begin{figure}
     \centering
     \includegraphics[width=0.5\textwidth]{images/light_infra_strong.png}
