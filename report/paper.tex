@@ -223,9 +223,9 @@ The parallel implementation of the code performs the following steps:
 
 
 \section{Performance and scalability analysis}
-The parallel implementation of the code has been tested and debugged locally at first in order to make sure everything was working properly. Once obtained a working version that achieved reasonable performance on a local machine, the code has been tested on different types of clusters instanced on Google Cloud Platform in order to evaluate its scalability. \\
-The Google Cloud Platform (GCP) offers a suite of cloud computing services including data storage and management, computing, networking, big data and machine learning tools, allowing businesses to build, deploy and scale their applications and services on the same infrastructure as Google. \\
-The performance of the parallel version of the code has been tested and evaluated on four different clusters:
+The parallel implementation of the code has been tested and debugged locally at first in order to make sure everything was working properly. Once obtained a working version having reasonable performance on a local machine, the code has been tested on different types of clusters instanced on Google Cloud Platform in order to evaluate its scalability. \\
+The Google Cloud Platform (GCP) offers a suite of cloud computing services including data storage and management, computing, networking, big data and machine learning tools, allowing businesses to build, deploy and scale their applications and services on Google's infrastructure. \\
+The performance of the parallel version of the code has been tested and evaluated on the following four clusters in order to investigate the difference in performance on different infrastructures:
 \begin{itemize}
     \item \textbf{Fat cluster}: three e2-highmem-8 (8 vCPU, 4 core, 64GB RAM)
     \begin{itemize}
@@ -245,7 +245,7 @@ mpirun --hostfile hostfile -np [N] ./a.out [genome_path] [pattern_path]
 The execution times measured for each execution have been collected in a \emph{.csv} file where a first analysis was performed to compute the speedup and efficiency using excel features. Speedup and efficiency are important metrics needed to assess strong and weak scalability. \\
 \textbf{Strong scalability} is the capability of a parallel program to reduce the computational time of a fixed size problem by adding more processors. Strong scalability is important to consider when we deal with a fixed amount of data and we want to speedup the execution of the computation. A simple way to evaluate it is computing the speedup as the ratio between the time t(1) needed to complete a serial task, and the amount of time t(N) needed to complete the same unit of work with N processing elements (parallel task)\cite{hpc scaling}:
 $$ Speedup(N) = \frac{t(1)}{t(N)} $$
-Whereas, \textbf{weak scalability} is the capability of a parallel program to keep the computational time fixed while increasing the size of the problem. Weak scalability is important to consider when we deal with problems that can increase in size and we want to keep the computation efficient by distributing it on different nodes. A simple way to assess weak scalability is to compute efficiency as the ratio between the time t(1) needed to complete a work unit with 1 processing element, and the amount of time t(N) needed to complete N of the same work units with N processing elements\cite{hpc scaling}:
+Whereas, \textbf{weak scalability} is the capability of a parallel program to keep the computational time fixed while increasing the size of the problem. Weak scalability is important to consider when we deal with problems that can increase in size and we want to keep the computation efficient by distributing it on more nodes. A simple way to assess weak scalability is to compute efficiency as the ratio between the time t(1) needed to complete a work unit with 1 processing element, and the amount of time t(N) needed to complete N of the same work units with N processing elements\cite{hpc scaling}:
 $$ Efficiency(N) = \frac{t(1)}{t(N)} $$
 Efficiency can also be estimated as the ratio between the speedup and the number of processing units used:
 $$ Efficiency = \frac{Speedup}{N} $$
@@ -257,25 +257,26 @@ The tests have been performed on two fat clusters: one containing only machines 
 
 \subsubsection{Intra-regional}
 The strong and weak scalability of the parallel implementation on a Fat Intra-regional cluster have been assessed using the speedup and efficiency formulas previously discussed and the results are shown in Figures \ref{fig:fat-intra-strong} and \ref{fig:fat-intra-weak}. \\
+The speedup obtained in Figure \ref{fig:fat-intra-strong} can be considered a good result and it is in line with what was expected from the a priori analysis, it is only slightly lower due to the process synchronization and data transfer overheads that have a negative impact on the execution times especially for the case of larger datasets and many virtual cores. \\
+Whereas, if we consider the weak scalability shown in Figure \ref{fig:fat-intra-weak}, we can notice that the efficiency drops faster for larger datasets, probably because the larger the dataset the more communication overhead is required to transfer it across the different nodes and also the memory allocation for the single node becomes more computationally expensive. 
+
+\subsubsection{Infra-regional}
+The same experiments have been executed on a Fat Infra-regional cluster and as it can be noticed from Figures \ref{fig:fat-infra-strong} and \ref{fig:fat-infra-weak} the performance in terms of both strong and weak scalability is much worse than in the intra-regional case. \\
+It is interesting to notice (Figure \ref{fig:fat-infra-strong}) that for smaller datasets, such as \emph{Escherichia Coli}, increasing the number of virtual cores beyond 8 vCores actually decreases the speedup; since 8 vCores is the capability of a single machine probably the reason for this strange behaviour is that just establishing the connection between machines far away from each other may require an overhead that is very large compared to both the data transfer overhead and the time needed to process the data in the case of a very small dataset. Even for medium and larger datasets we reach a maximum number of virtual cores after which the speedup decreases. Moreover, for all datasets the speedup obtained is lower than the intra-regional configuration given the same number of virtual cores. \\ 
+This behaviour is confirmed by looking at the weak scalability plot (Figure \ref{fig:fat-infra-weak}) where we can notice that the efficiency drops much faster than the intra-regional case, because transfering data between machines located in different geographical regions demands a larger overhead. The efficiency drops faster for the smaller dataset for the reason discussed previously. \\
+We can conclude that the intra-regional configuration is better in terms of both strong and weak scalability than the infra-regional cluster, that is not recommendable especially for small datasets.
 \begin{figure}
     \centering
     \includegraphics[width=0.5\textwidth]{images/fat_intra_strong.png}
     \caption{Strong scalability for Fat Intra-regional cluster }
     \label{fig:fat-intra-strong}
 \end{figure}
-The speedup obtained in Figure \ref{fig:fat-intra-strong} can be considered a good result and it is in line with what was expected from the a priori analysis, it is only slightly lower due to the process synchronization and data transfer overheads that have a negative impact on the execution times especially for the case of larger datasets and many virtual cores. \\
 \begin{figure}
     \centering
     \includegraphics[width=0.5\textwidth]{images/fat_intra_weak.png}
     \caption{Weak scalability for Fat Intra-regional cluster }
     \label{fig:fat-intra-weak}
 \end{figure}
-Whereas, if we consider the weak scalability shown in Figure \ref{fig:fat-intra-weak}, we can notice that the efficiency drops faster for larger datasets, probably because the larger the dataset the more communication overhead is required to transfer it across the different nodes and also the memory allocation for the single node becomes more computationally expensive. 
-
-\subsubsection{Infra-regional}
-The same experiments have been executed on a Fat Infra-regional cluster and as it can be noticed from Figures \ref{fig:fat-infra-strong} and \ref{fig:fat-infra-weak} the performance in terms of both strong and weak scalability is much worse than in the intra-regional case. \\
-It is interesting to notice (Figure \ref{fig:fat-infra-strong}) that for smaller datasets, such as the \emph{Escherichia Coli} dataset, increasing the number of virtual cores beyond 8 vCores actually decreases the speedup; since 8 vCores is the capability of a single machine probably the reason for this strange behaviour is that just establishing the connection between machines far away from each other may require an overhead that is very large compared to both the data transfer overhead and the time needed to process the data in the case of a very small dataset. Even for medium and larger datasets we reach a maximum number of virtual cores after which the speedup decreases. Moreover, for all datasets the speedup obtained is lower than the intra-regional scenario for the same number of virtual cores. \\ 
-This behaviour is confirmed by looking at the weak scalability plot (Figure \ref{fig:fat-infra-weak}) where we can notice that the efficiency drops much faster than the intra-regional case, because transfering data between machines located in different geographical regions demands a larger overhead. The efficiency drops faster for the smaller dataset for the reason discussed previously. \\
 \begin{figure}
     \centering
     \includegraphics[width=0.5\textwidth]{images/fat_infra_strong.png}
@@ -288,14 +289,18 @@ This behaviour is confirmed by looking at the weak scalability plot (Figure \ref
     \caption{Weak scalability for Fat Infra-regional cluster }
     \label{fig:fat-infra-weak}
 \end{figure}
-We can conclude that the intra-regional configuration is better in terms of both strong and weak scalability than the infra-regional cluster, that is not recommendable especially for small datasets.
 
 \subsection{Light cluster}
-A light cluster is a cluster designed with many light-weighted virtual cores. The advantages of this configuration are that it is more cost and energy effective, since the single machine consumes less power, and it is more resilient since it relies on a larger number of machines. \\
+A light cluster is composed by many light-weighted machines. The advantage of this configuration is that it is more resilient compared to a fat cluster since it relies on a larger number of machines. Moreover, it can also be more cost and energy effective, since the single machine generally consumes less power. \\
 As in the fat cluster experiments, the tests have been performed both on a intra-regional and infra-regional cluster in order to investigate the difference in performance. 
 
 \subsubsection{Intra-regional}
 The results for strong and weak scalability on a Light Intra-region cluster are shown in Figures \ref{fig:light-intra-strong} and \ref{fig:light-intra-weak}. \\
+As in the previous cases, strong scalability has been evaluated through the computation of the speedup (Figure \ref{fig:light-intra-strong}), which can be considered a good enhancement and is comparable to the results obtained for the fat intra-regional cluster. \\
+Similarly to the fat intra-regional custer, also in this case it can be noticed that efficiency drops faster for larger datasets that are indeed less weakly scalable on intra-regional clusters compared to smaller ones (Figure \ref{fig:light-intra-weak}) since there is a greater overhead for transfering the data between different nodes.
+
+\subsubsection{Infra-regional}
+Finally, the same experiments have been conducted on the light infra-regional cluster. The results are shown in Figures \ref{fig:light-infra-strong} and \ref{fig:light-infra-weak}. We can observe a behaviour similar to the results obtained for the execution on the fat infra-regional cluster for both the strong and weak scalability. Indeed, the speedup is lower than the corresponding values for the light intra-regional cluster, especially for the smaller dataset, and it tends to decrease beyond a certain number of virtual cores. Also the efficiency (Figure \ref{fig:light-infra-weak}) results are similar to those obtained for the fat infra-regional cluster (Figure \ref{fig:fat-infra-weak}) showing that even in a light cluster the infra-regional configuration is less weakly scalable, especially for small datasets, compared to the intra-regional counterpart. 
 \begin{figure}
     \centering
     \includegraphics[width=0.5\textwidth]{images/light_intra_strong.png}
@@ -308,11 +313,6 @@ The results for strong and weak scalability on a Light Intra-region cluster are 
     \caption{Weak scalability for Light Intra-regional cluster }
     \label{fig:light-intra-weak}
 \end{figure}
-As in the previous cases, strong scalability has been evaluated through the computation of the speedup (Figure \ref{fig:light-intra-strong}), which can be considered a good enhancement and is similar to the results obtained for the fat intra-regional cluster. \\
-Similarly to the fat intra-regional custer, also in this case it can be noticed that efficiency drops faster for larger datasets that are indeed less weakly scalable on intra-regional clusters compared to smaller ones (Figure \ref{fig:light-intra-weak}) since there is a greater overhead for transfering the data between different nodes.
-
-\subsubsection{Infra-regional}
-Finally, the same experiments have been conducted on the light infra-regional cluster. The results are shown in Figures \ref{fig:light-infra-strong} and \ref{fig:light-infra-weak}. We can observe a behaviour similar to the results obtained for the execution on the fat infra-regional cluster for both the strong and weak scalability. Indeed, the speedup is lower than the corresponding values for the light intra-regional cluster, especially for the smaller dataset, and it tends to decrease beyond a certain number of virtual cores. Also the efficiency (Figure \ref{fig:light-infra-weak}) results are similar to those obtained for the fat infra-regional cluster (Figure \ref{fig:fat-infra-weak}) showing that even in a light cluster the infra-regional configuration is less weakly scalable, especially for small datasets, than the intra-regional counterpart. 
 \begin{figure}
     \centering
     \includegraphics[width=0.5\textwidth]{images/light_infra_strong.png}
@@ -327,6 +327,9 @@ Finally, the same experiments have been conducted on the light infra-regional cl
 \end{figure}
 
 \section{Conclusions}
+The parallel implementation of the Burrows-Wheeler algorithm for substring matching provided in this project performed well on intra-regional clusters, both fat and light, in terms of both strong and weak scalability, especially for small datasets. Whereas for larger datasets it proved to be less scalable probably due to data transfer overheads. The speedups obtained were in line with what was expected from the a priori analysis, although a bit worse due to communication overheads. \\
+On the other hand, performances were not as satisfactory on infra-regional clusters, where the code achieved lower speedup and efficiency both on fat and light clusters compared to the corresponding intra-regional experiments. Moreover, as opposed to the intra-regional scenario, in the infra-regional experiments smaller datasets proved to be less scalable, probably because of the overheads needed to just connect and synchronize machines far from each other.
+
 
 \begin{thebibliography}{9}
 \bibitem{nucleotide} \url{https://en.wikipedia.org/wiki/Nucleotide}
