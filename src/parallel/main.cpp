@@ -6,10 +6,6 @@
 #include "../utils/preprocessing.h"
 #include "../utils/bwt.h"
 
-// export PATH="/Users/andreiblindu/mpi/bin:$PATH"
-// mpicc -o [exec_name] [source_name] <-- compile
-// mpirun -n [nodes] [exec_name] <-- run
-
 #define TAG_CHUNK 100
 #define TAG_START_INDEX 101
 
