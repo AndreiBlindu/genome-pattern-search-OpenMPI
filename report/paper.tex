@@ -17,16 +17,16 @@
 %% Template article for Elsevier's document class `elsarticle'
 %% with harvard style bibliographic references
 
- \documentclass[final,5p,times,twocolumn,authoryear]{elsarticle}
- \let\today\relax
+\documentclass[final,5p,times,twocolumn,authoryear]{elsarticle}
+\let\today\relax
 \makeatletter
 \def\ps@pprintTitle{%
-    \let\@oddhead\@empty
-    \let\@evenhead\@empty
-    \def\@oddfoot{\footnotesize\itshape
-         {} \hfill\today}%
-    \let\@evenfoot\@oddfoot
-    }
+   \let\@oddhead\@empty
+   \let\@evenhead\@empty
+   \def\@oddfoot{\footnotesize\itshape
+        {} \hfill\today}%
+   \let\@evenfoot\@oddfoot
+   }
 \makeatother
 
 %% For including figures, graphicx.sty has been loaded in
@@ -41,8 +41,8 @@
 \usepackage{float}
 
 \lstset{%
-  breaklines=true,
-  columns=fullflexible,
+ breaklines=true,
+ columns=fullflexible,
 }
 
 \usepackage{caption}
@@ -70,8 +70,8 @@
 
 \author{Andrei S. Blindu}
 \affiliation{organization={University of Pavia, Computer Engineering},%Department and Organization
-            city={Pavia},
-            country={Italy}}
+           city={Pavia},
+           country={Italy}}
 
 \begin{abstract}
 %% Text of abstract
@@ -94,14 +94,14 @@ Substring Matching \sep Genomics \sep Burrows-Wheeler Transform \sep Paralleliza
 \section{Biological context and Data}
 \label{Biological context and Data}
 The algorithm considered in this project is being used to find a gene within the genome of an organism. The genome is made up of DNA and contains the set of genes of an organism which are responsible for its traits and characteristics.
-DNA is a long double helix molecule composed by a sequence of nucleotides, each nucleotide is composed by deoxyribose sugar, a phosphate group and a nucleobase\cite{nucleotide}. There are four types of nucleobases in DNA: guanine (G), adenine (A), cytosine (C) and thymine (T).
+DNA is a long double helix molecule composed by a sequence of nucleotides, each nucleotide is composed by a deoxyribose sugar, a phosphate group and a nucleobase\cite{nucleotide}. There are four types of nucleobases in DNA: guanine (G), adenine (A), cytosine (C) and thymine (T).
 In bioinformatics applications, the genome and the genes are usually considered as long strings of computer code composed by four possible letters (G,A,C,T). \\
 The genomes used for this analysis have been taken from the NCBI website\cite{ncbi}. \\
 Genomes of different sizes have been used in order to study how the performance changes with respect to the input dataset dimension:
 \begin{itemize}
-    \item \emph{Escherichia Coli}, bacteria commonly found in the lower intestine of warm-blooded organisms\cite{ecoli}, 4.6MB \cite{ecoli dataset}
-    \item \emph{Entamoeba Invadens}, an amoebozoa parasite of reptiles\cite{entamoeba}, 40.9MB \cite{entamoeba dataset}
-    \item \emph{Formica Exsecta}, is a species of ant found from Western Europe to Asia \cite{formica}, 277.6MB \cite{formica dataset}
+   \item \emph{Escherichia Coli}, a bacteria commonly found in the lower intestine of warm-blooded organisms\cite{ecoli}, 4.6MB \cite{ecoli dataset}
+   \item \emph{Entamoeba Invadens}, an amoebozoa parasite of reptiles\cite{entamoeba}, 40.9MB \cite{entamoeba dataset}
+   \item \emph{Formica Exsecta}, a species of ant found from Western Europe to Asia \cite{formica}, 277.6MB \cite{formica dataset}
 \end{itemize}
 
 
@@ -112,10 +112,10 @@ Having efficient algorithms that allow us to deal with huge genetic sequences is
 The Burrows-Wheeler Transform restructures the original string in a way that is more compressible. It does so by building a matrix whose rows are all the cyclic shifts of the input string, then the rows are lexicographically sorted and finally the last column is selected as the output of the BWT.
 Let's consider the following example in Figure \ref{fig:bwt-label} taken from the post on \emph{mr-easy.github.io}\cite{mreasy}.
 \begin{figure}
-    \centering
-    \includegraphics[width=0.5\textwidth]{images/bwt.png}
-    \caption{Burrows-Wheeler Transform}
-    \label{fig:bwt-label}
+   \centering
+   \includegraphics[width=0.5\textwidth]{images/bwt.png}
+   \caption{Burrows-Wheeler Transform}
+   \label{fig:bwt-label}
 \end{figure}
 \\ We take the last column (BWT array) because it can be proven that we can recover all the cyclic rotations rows from it and it is the only column having this property that is important to compute the inverse of the transform \cite{geeks}. Moreover, it has better symbol clustering, which means that the same symbols are often grouped together and this favours efficient compression \cite{geeks}. \\
 The implementation\cite{bwt.h me} of the Burrows-Wheeler Transform used in this project to compute the BWT array and the Suffix Array for a given genome string has been taken from the article on \emph{GeeksforGeeks}\cite{geeks}.
@@ -136,14 +136,14 @@ If at a certain iteration the start index and the end index of the band coincide
 
 \subsection{Analysis of the serial algorithm}
 In this section, it will be discussed how the serial version of the code has been implemented and the computational costs associated to the different steps of the algorithm, in terms of number of instructions and in relation to the input size. \\
-Before applying the previously described BWT algorithm it is necessary to read and preprocess both the genome and the gene file. The path of these files are passed to the \emph{main()} function as parameters when the program is executed. The preprocessing involves removing spaces, new-lines, characters different from the nucleobases symbols, converting lower case letters to upper case and adding a termination character at the end of the preprocessed strings; all these operations are necessary for the correct execution of the algorithm. The computational costs of both the reading and preprocessing are linear with the size of the input file: 
+Before applying the previously described BWT algorithm it is necessary to read and preprocess both the genome and the gene files. The path of these files are passed to the \emph{main()} function as parameters when the program is executed. The preprocessing involves removing spaces, new-lines, characters different from the nucleobases symbols, converting lower case letters to upper case and adding a termination character at the end of the preprocessed strings; all these operations are necessary for the correct execution of the algorithm. The computational costs of both the reading and preprocessing are linear with the size of the input file: 
 $$ O(genomeSize + patternSize) $$
 The Burrows-Wheeler Transform and the pattern matching are implemented in three phases: \\
 \begin{enumerate}
-    \item \textbf{Suffix Array computation}: as it can be noticed by looking at the code implementation, it contains two separate for loops iterating over the genome string and an execution of the quicksort algorithm, so the computational cost of this phase can be computed as $$O(2*genomeSize + genomeSize*ln(genomeSize))$$
-    \item \textbf{Last column computation}: since it contains basically a for loop iteration over the genome string, its computational cost can be computed as $$O(genomeSize)$$
-    \item \textbf{Pattern search}: it iterates the genome string 4 times in order to count the number of occurences for each of the four nucleobases; then assuming we are in the case that a match is found we have to iterate over all the nucleobases in the pattern and for each iteration we have to execute the rank function twice; the cost of the rank computation depends on the index from which we want to count the number of occurences of a character in the BWT array, so on average we can say it is $genomeSize/2$. So we can estimate the total computational cost of the pattern search as
-    $$O(4*genomeSize + patternSize*genomeSize)$$
+   \item \textbf{Suffix Array computation}: as it can be noticed by looking at the code implementation\cite{bwt.h me}, it contains two separate for loops iterating over the genome string and an execution of the quicksort algorithm, so the computational cost of this phase can be computed as $$O(2*genomeSize + genomeSize*ln(genomeSize))$$
+   \item \textbf{Last column computation}: since it contains basically a for loop iteration over the genome string, its computational cost can be computed as $$O(genomeSize)$$
+   \item \textbf{Pattern search}: it iterates the genome string 4 times in order to count the number of occurences for each of the four nucleobases; then assuming we are in the case that a match is found we have to iterate over all the nucleobases in the pattern and for each iteration we have to execute the rank function twice; the cost of the rank computation depends on the index from which we want to count the number of occurences of a character in the BWT array, so on average we can say it is $genomeSize/2$. So we can estimate the total computational cost of the pattern search as
+   $$O(4*genomeSize + patternSize*genomeSize)$$
 \end{enumerate}
 The following table summarizes the computational costs of the different steps.
 \begin{table}[H]
@@ -152,60 +152,61 @@ The following table summarizes the computational costs of the different steps.
 \hline
 Step & Cost (N. operations) \\
 \hline
- Read data & $O(genSize + patSize)$ \\ 
- Preprocess data & $O(genSize + patSize)$ \\  
- Suffix array & $O(2*genSize + genSize*ln(genSize))$ \\
- BWT last column & $O(genSize)$ \\
- Pattern search & $O(4*genSize + patSize*genSize)$ \\
+Read data & $O(genSize + patSize)$ \\ 
+Preprocess data & $O(genSize + patSize)$ \\  
+Suffix array & $O(2*genSize + genSize*ln(genSize))$ \\
+BWT last column & $O(genSize)$ \\
+Pattern search & $O(4*genSize + patSize*genSize)$ \\
 \hline
 \end{tabular}
 \caption{Computational costs for each step of the code}
 \end{center}
 \end{table}
 It can be noticed that the most expensive operations are the suffix array computation and the pattern search, so these are the steps we are most interested in parallelizing. \\
-In order to have a more realistic performance evaluation of each section of the code, execution times have been measured considering the combinations of genome and pattern sizes shown in the following table (the same ones will be used for testing the parallel implementation on GCP).
+In order to have a more realistic performance evaluation of each section of the code, execution times have been measured considering the combinations of genome and pattern sizes shown in the following table(\ref{table:datasets_table}) (the same ones will be used for testing the parallel implementation on GCP).
 \begin{table}[H]
 \begin{center}
 \begin{tabular}{|| c c c ||}
 \hline
 Dataset & Genome size & Pattern size \\
 \hline
- Escherichia Coli & 4699745 & 933 \\
- Entamoeba Invadens & 41522539 & 654 \\
- Formica Exsecta & 283043175 & 200 \\
+Escherichia Coli & 4699745 & 933 \\
+Entamoeba Invadens & 41522539 & 654 \\
+Formica Exsecta & 283043175 & 200 \\
 \hline
 \end{tabular}
 \end{center}
 \caption{Genome and pattern sizes for the datasets used}
 \vspace{-2mm}%Put here to reduce too much white space after your table 
+\label{table:datasets_table}
 \end{table}
-The average times measured are shown in the table below. The serial code has been executed on a MacBook Pro, Apple M1 Pro chip, 16GB RAM. More precise results could be obtained by using more advanced profiling tools and testing the code on different devices and with more input combinations.
+The average times measured are shown in the table below(\ref{table:times_table}). The serial code has been executed on a MacBook Pro, Apple M1 Pro chip, 16GB RAM. More precise results could be obtained by using more advanced profiling tools and testing the code on different devices and with more input combinations.
 \begin{table}[H]
 \begin{center}
 \begin{tabular}{|| c c c c ||}
 \hline
 Dataset & Step & Time(s) & \% \\
 \hline
- E. Coli & Read data & 0,105 & 0,629 \\
-    & Preprocess data & 0,086 & 0,516 \\
-    & Suffix array & 1,669 & 10,006 \\
-    & BWT last column & 0,012 & 0,072 \\
-    & Pattern search & 14,808 & 88,777 \\
-    & Total & 16,68 & 100 \\
+E. Coli & Read data & 0,105 & 0,629 \\
+   & Preprocess data & 0,086 & 0,516 \\
+   & Suffix array & 1,669 & 10,006 \\
+   & BWT last column & 0,012 & 0,072 \\
+   & Pattern search & 14,808 & 88,777 \\
+   & Total & 16,68 & 100 \\
 \hline
 E. Invadens & Read data & 0,712 & 0,681 \\
-    & Preprocess data & 0,742 & 0,71 \\
-    & Suffix array & 19,903 & 19,035 \\
-    & BWT last column & 0,403 & 0,385 \\
-    & Pattern search & 82,801 & 79,189 \\
-    & Total & 104,561 & 100 \\
+   & Preprocess data & 0,742 & 0,71 \\
+   & Suffix array & 19,903 & 19,035 \\
+   & BWT last column & 0,403 & 0,385 \\
+   & Pattern search & 82,801 & 79,189 \\
+   & Total & 104,561 & 100 \\
 \hline
 F. Exsecta & Read data & 4,738 & 1,581 \\
-    & Preprocess data & 4,864 & 1,623 \\
-    & Suffix array & 152,034 & 50,732 \\
-    & BWT last column & 3,357 & 1,12 \\
-    & Pattern search & 134,689 & 44,944 \\
-    & Total & 299,682 & 100 \\
+   & Preprocess data & 4,864 & 1,623 \\
+   & Suffix array & 152,034 & 50,732 \\
+   & BWT last column & 3,357 & 1,12 \\
+   & Pattern search & 134,689 & 44,944 \\
+   & Total & 299,682 & 100 \\
 \hline
 \end{tabular}
 \end{center}
@@ -223,27 +224,27 @@ Where N is the number of nodes (virtual CPUs) that are exploited, S is the fract
 The only parts that cannot be parallelized, at least not efficiently or simply, are the reading and preprocessing of the genome and gene files. Even the string matching algorithm based on the Burrows-Wheeler Transform is intrinsically serial, due to loop-carried dependencies, but it is possible to parallelize it by distributing chunks of the genome on different nodes so that the nodes can perform the BWT pattern search in parallel each on a different genome portion, smaller than the whole dataset. The choice of this strategy is also motivated by the fact that, as it can be noticed from the table in the previous section, the computational costs of the operations are highly dependent on the genome dataset size, so we can expect an enhancement by distributing it among different nodes. Whereas it is not possible to distribute the pattern string across different nodes because they all need to have the whole pattern to be able to find it. The methods and issues regarding the parallel implementation will be discussed in greater details in the next section. \\
 The Amdalh's law has been applied after computing the S and P values for each dataset using the execution times in the table \ref{table:times_table}. The expected theoretical speedups calculated for all datasets are shown in Figure \ref{fig:theoretical-speedup-label}.
 \begin{figure}[H]
-    \centering
-    \includegraphics[width=0.5\textwidth]{images/theoretical_speedup.png}
-    \caption{Theoretical Speedup}
-    \label{fig:theoretical-speedup-label}
+   \centering
+   \includegraphics[width=0.5\textwidth]{images/theoretical_speedup.png}
+   \caption{Theoretical Speedup}
+   \label{fig:theoretical-speedup-label}
 \end{figure}
 It can be noticed that for larger datasets the expected speedup is lower than for smaller ones due to the non-parallelizable fraction S being greater (as shown in the execution times table \ref{table:times_table}) probably because there are overheads due to the allocation and management of a bigger amount of memory.
 
 \section{OpenMPI parallel implementation}
-The parallel version of the code has been developed using OpenMPI (Message Passing Interface) in order to manage different processes running in parallel and their communication on a distributed memory system. In addition to the parameters discussed for the serial implementation, in the parallel version is important to specify the number of CPUs on which to run the program; an error will be generated if the number specified exceedes the capability of the machine or cluster of machines you are running the command on. Moreover, MPI allows to specify an hostfile containing the IP addresses of the machines to execute the code on and the number of slots (virtual CPUs) on each machine; this allows to easily setup a cluster of machines on which to run the tests, as discussed in the next section. \\
+The parallel version of the code\cite{parallel me} has been developed using OpenMPI (Message Passing Interface) in order to manage different processes running in parallel and their communication on a distributed memory system. In addition to the parameters discussed for the serial implementation, in the parallel version is important to specify the number of virtual CPUs on which to run the program; an error will be generated if the number specified exceedes the capability of the machine or cluster of machines you are running the command on. Moreover, MPI allows to specify an hostfile containing the IP addresses of the machines to execute the code on and the number of slots (virtual CPUs) on each machine; this allows to easily setup a cluster of machines on which to run the tests, as discussed in the next section. \\
 The parallel implementation of the code performs the following steps:
 \begin{enumerate}
-    \item The master reads the genome and pattern files and performs the preprocessing; since these operations are not-parallelizable they are executed only on a single master node.
-    \item The master calculates and broadcasts to all slaves the genome size and pattern size. This is important because slaves must know how much memory to allocate before receiving the data in order to avoid segmentation fault errors. A barrier is put in place in order to be sure all nodes have received the message and allocated memory before going on.
-    \item The master broadcasts the pattern to all slaves, after they have allocated the proper amount of memory.
-    \item The master splits the genome string in different chunks and sends each slave a chunk and the start index of that chunk with respect to the whole string. The most simple and naive way to perform the splitting is equally divide the genome among the number of nodes. But how can we make sure that genes falling between two different chunks are detected? It can happen that the pattern we are searching for is between two different chunks so if all slaves apply the Burrows-Wheeler search algorithm on its own chunk none is going to find it since none has the whole pattern in its chunk. In order to avoid this nasty problem a simple solution is to have overlapping areas between neighbouring chunks equal to the size of the pattern, so if the pattern is there we make sure it will be detected by at least one of the nodes processing the neighbouring chunks. This solution also takes care of another problem: the integer division of the genome between a finite integer number of nodes leaves out a reminder chunk, but if we suppose that the pattern size is greater than the number of nodes (assumption that is always valid in the experiments performed in this project) then the eventual reminder is covered by extending the chunk size with the pattern size. So each slave allocates memory for the chunks as follows:
-    \begin{lstlisting}[language=c++]
-    long chunkSize=genomeSize/SIZE;
-    long chunkSizeExtended=chunkSize+patternSize;
-    char* chunk=(char*)malloc(chunkSizeExtended);
-    \end{lstlisting}
-    \item Each slave, after receiving its chunk of genome and the start index of that chunk, starts performing the Burrows-Wheeler transform and string matching algorithm with the steps described in the serial version: compute suffix array, compute BWT last column and pattern search. When a node either finds out the position of the pattern in its genome chunk or concludes there's no match prints the result. If there is a match, the position found is summed to the start index of the chunk before being communicated.
+   \item The master reads the genome and pattern files and performs the preprocessing; since these operations are not-parallelizable they are executed only on a single master node.
+   \item The master calculates and broadcasts to all slaves the genome size and pattern size. This is important because slaves must know how much memory to allocate before receiving the data in order to avoid segmentation fault errors. A barrier is put in place in order to be sure all nodes have received the message and allocated memory before going on.
+   \item The master broadcasts the pattern to all slaves, after they have allocated the proper amount of memory.
+   \item The master splits the genome string in different chunks and sends each slave a chunk and the start index of that chunk with respect to the whole string. The most simple and naive way to perform the splitting is equally divide the genome among the number of nodes. But how can we make sure that genes falling between two different chunks are detected? It can happen that the pattern we are searching for is between two different chunks so if all nodes apply the Burrows-Wheeler search algorithm on their own chunk none is going to find it since none has the whole pattern in its chunk. In order to avoid this nasty problem a simple solution is to have overlapping areas between neighbouring chunks equal to the size of the pattern, so if the pattern is there we make sure it will be detected by at least one of the nodes processing the neighbouring chunks. This solution also takes care of another problem: the integer division of the genome between a finite integer number of nodes leaves out a reminder chunk, but if we suppose that the pattern size is greater than the number of nodes (assumption that is always valid in the experiments performed in this project) then the eventual reminder is covered by extending the chunk size with the pattern size. So each node allocates memory for the chunks as follows:
+   \begin{lstlisting}[language=c++]
+   long chunkSize=genomeSize/SIZE;
+   long chunkSizeExtended=chunkSize+patternSize;
+   char* chunk=(char*)malloc(chunkSizeExtended);
+   \end{lstlisting}
+   \item The master node and all slaves, after receiving their chunk of genome and the start index of that chunk, start performing the Burrows-Wheeler transform and string matching algorithm with the steps described in the serial version: compute suffix array, compute BWT last column and pattern search. When a node either finds out the position of the pattern in its genome chunk or concludes there's no match prints the result. If there is a match, the position found is summed to the start index of the chunk before being communicated.
 \end{enumerate}
 
 
@@ -252,16 +253,16 @@ The parallel implementation of the code has been tested and debugged locally at 
 The Google Cloud Platform (GCP) offers a suite of cloud computing services including data storage and management, computing, networking, big data and machine learning tools, allowing businesses to build, deploy and scale their applications and services on Google's infrastructure. \\
 The performance of the parallel version of the code has been tested and evaluated on the following four clusters in order to investigate the difference in performance on different infrastructures:
 \begin{itemize}
-    \item \textbf{Fat cluster}: three e2-highmem-8 (8 vCPU, 4 core, 64GB RAM)
-    \begin{itemize}
-        \item \textbf{Intra-regional}: same region (us-central1-a)
-        \item \textbf{Infra-regional}: different regions (us-central1-a, europe-north1-a, asia-east1-b)
-    \end{itemize}
-    \item \textbf{Light cluster}: six e2-highmem-2 (2 vCPU, 1 core, 16GB RAM)
-    \begin{itemize}
-        \item \textbf{Intra-regional}: same region (us-central1-a)
-        \item \textbf{Infra-regional}: different regions (us-central1-a, us-west2-a, europe-north1-a, europe-west9-a, asia-east1-b, asia-south2-a)
-    \end{itemize}
+   \item \textbf{Fat cluster}: three e2-highmem-8 (8 vCPU, 4 core, 64GB RAM)
+   \begin{itemize}
+       \item \textbf{Intra-regional}: same region (us-central1-a)
+       \item \textbf{Infra-regional}: different regions (us-central1-a, europe-north1-a, asia-east1-b)
+   \end{itemize}
+   \item \textbf{Light cluster}: six e2-highmem-2 (2 vCPU, 1 core, 16GB RAM)
+   \begin{itemize}
+       \item \textbf{Intra-regional}: same region (us-central1-a)
+       \item \textbf{Infra-regional}: different regions (us-central1-a, us-west2-a, europe-north1-a, europe-west9-a, asia-east1-b, asia-south2-a)
+   \end{itemize}
 \end{itemize}
 The tests have been performed by setting up a hostfile on the master containing the local IP addresses and the number of slots (vCPU) of each node of the cluster and then running the following command \\
 \begin{lstlisting}[language=bash]
@@ -283,16 +284,16 @@ The tests have been performed on two fat clusters: one containing only machines 
 \subsubsection{Intra-regional}
 The strong and weak scalability of the parallel implementation on a Fat Intra-regional cluster have been assessed using the speedup and efficiency formulas previously discussed and the results are shown in Figures \ref{fig:fat-intra-strong} and \ref{fig:fat-intra-weak}. \\
 \begin{figure}[H]
-    \centering
-    \includegraphics[width=0.45\textwidth]{images/fat_intra_strong.png}
-    \caption{Strong scalability for Fat Intra-regional cluster }
-    \label{fig:fat-intra-strong}
+   \centering
+   \includegraphics[width=0.45\textwidth]{images/fat_intra_strong.png}
+   \caption{Strong scalability for Fat Intra-regional cluster }
+   \label{fig:fat-intra-strong}
 \end{figure}
 \begin{figure}[H]
-    \centering
-    \includegraphics[width=0.45\textwidth]{images/fat_intra_weak.png}
-    \caption{Weak scalability for Fat Intra-regional cluster }
-    \label{fig:fat-intra-weak}
+   \centering
+   \includegraphics[width=0.45\textwidth]{images/fat_intra_weak.png}
+   \caption{Weak scalability for Fat Intra-regional cluster }
+   \label{fig:fat-intra-weak}
 \end{figure}
 The speedup obtained in Figure \ref{fig:fat-intra-strong} can be considered a good result and it is in line with what was expected from the a priori analysis, it is only slightly lower due to the process synchronization and data transfer overheads that have a negative impact on the execution times especially for the case of larger datasets and many virtual cores. \\
 Whereas, if we consider the weak scalability shown in Figure \ref{fig:fat-intra-weak}, we can notice that the efficiency drops faster for larger datasets, probably because the larger the dataset the more communication overhead is required to transfer it across the different nodes and also the memory allocation for the single node becomes more computationally expensive. 
@@ -300,16 +301,16 @@ Whereas, if we consider the weak scalability shown in Figure \ref{fig:fat-intra-
 \subsubsection{Infra-regional}
 The same experiments have been executed on a Fat Infra-regional cluster and as it can be noticed from Figures \ref{fig:fat-infra-strong} and \ref{fig:fat-infra-weak} the performance in terms of both strong and weak scalability is much worse than in the intra-regional case. \\
 \begin{figure}[H]
-    \centering
-    \includegraphics[width=0.45\textwidth]{images/fat_infra_strong.png}
-    \caption{Strong scalability for Fat Infra-regional cluster }
-    \label{fig:fat-infra-strong}
+   \centering
+   \includegraphics[width=0.45\textwidth]{images/fat_infra_strong.png}
+   \caption{Strong scalability for Fat Infra-regional cluster }
+   \label{fig:fat-infra-strong}
 \end{figure}
 \begin{figure}[H]
-    \centering
-    \includegraphics[width=0.45\textwidth]{images/fat_infra_weak.png}
-    \caption{Weak scalability for Fat Infra-regional cluster }
-    \label{fig:fat-infra-weak}
+   \centering
+   \includegraphics[width=0.45\textwidth]{images/fat_infra_weak.png}
+   \caption{Weak scalability for Fat Infra-regional cluster }
+   \label{fig:fat-infra-weak}
 \end{figure}
 It is interesting to notice (Figure \ref{fig:fat-infra-strong}) that for smaller datasets, such as \emph{Escherichia Coli}, increasing the number of virtual cores beyond 8 vCores actually decreases the speedup; since 8 vCores is the capability of a single machine probably the reason for this strange behaviour is that just establishing the connection between machines far away from each other may require an overhead that is very large compared to both the data transfer overhead and the time needed to process the data in the case of a very small dataset. Even for medium and larger datasets we reach a maximum number of virtual cores after which the speedup decreases. Moreover, for all datasets the speedup obtained is lower than the intra-regional configuration given the same number of virtual cores. \\ 
 This behaviour is confirmed by looking at the weak scalability plot (Figure \ref{fig:fat-infra-weak}) where we can notice that the efficiency drops much faster than the intra-regional case, because transfering data between machines located in different geographical regions demands a larger overhead. The efficiency drops faster for the smaller dataset for the reason discussed previously. \\
@@ -322,16 +323,16 @@ As in the fat cluster experiments, the tests have been performed both on a intra
 \subsubsection{Intra-regional}
 The results for strong and weak scalability on a Light Intra-region cluster are shown in Figures \ref{fig:light-intra-strong} and \ref{fig:light-intra-weak}. \\
 \begin{figure}[H]
-    \centering
-    \includegraphics[width=0.45\textwidth]{images/light_intra_strong.png}
-    \caption{Strong scalability for Light Intra-regional cluster }
-    \label{fig:light-intra-strong}
+   \centering
+   \includegraphics[width=0.45\textwidth]{images/light_intra_strong.png}
+   \caption{Strong scalability for Light Intra-regional cluster }
+   \label{fig:light-intra-strong}
 \end{figure}
 \begin{figure}[H]
-    \centering
-    \includegraphics[width=0.45\textwidth]{images/light_intra_weak.png}
-    \caption{Weak scalability for Light Intra-regional cluster }
-    \label{fig:light-intra-weak}
+   \centering
+   \includegraphics[width=0.45\textwidth]{images/light_intra_weak.png}
+   \caption{Weak scalability for Light Intra-regional cluster }
+   \label{fig:light-intra-weak}
 \end{figure}
 As in the previous cases, strong scalability has been evaluated through the computation of the speedup (Figure \ref{fig:light-intra-strong}), which can be considered a good enhancement and is comparable to the results obtained for the fat intra-regional cluster. \\
 Similarly to the fat intra-regional custer, also in this case it can be noticed that efficiency drops faster for larger datasets that are indeed less weakly scalable on intra-regional clusters compared to smaller ones (Figure \ref{fig:light-intra-weak}) since there is a greater overhead for transfering the data between different nodes.
@@ -339,16 +340,16 @@ Similarly to the fat intra-regional custer, also in this case it can be noticed 
 \subsubsection{Infra-regional}
 Finally, the same experiments have been conducted on the light infra-regional cluster. The results are shown in Figures \ref{fig:light-infra-strong} and \ref{fig:light-infra-weak}. 
 \begin{figure}[H]
-    \centering
-    \includegraphics[width=0.45\textwidth]{images/light_infra_strong.png}
-    \caption{Strong scalability for Light Infra-regional cluster }
-    \label{fig:light-infra-strong}
+   \centering
+   \includegraphics[width=0.45\textwidth]{images/light_infra_strong.png}
+   \caption{Strong scalability for Light Infra-regional cluster }
+   \label{fig:light-infra-strong}
 \end{figure}
 \begin{figure}[H]
-    \centering
-    \includegraphics[width=0.45\textwidth]{images/light_infra_weak.png}
-    \caption{Weak scalability for Light Infra-regional cluster }
-    \label{fig:light-infra-weak}
+   \centering
+   \includegraphics[width=0.45\textwidth]{images/light_infra_weak.png}
+   \caption{Weak scalability for Light Infra-regional cluster }
+   \label{fig:light-infra-weak}
 \end{figure}
 We can observe a behaviour similar to the results obtained for the execution on the fat infra-regional cluster for both the strong and weak scalability. Indeed, the speedup is lower than the corresponding values for the light intra-regional cluster, especially for the smaller dataset, and it tends to decrease beyond a certain number of virtual cores. Also the efficiency (Figure \ref{fig:light-infra-weak}) results are similar to those obtained for the fat infra-regional cluster (Figure \ref{fig:fat-infra-weak}) showing that even in a light cluster the infra-regional configuration is less weakly scalable, especially for small datasets, compared to the intra-regional counterpart. 
 
@@ -372,6 +373,8 @@ On the other hand, performances were not as satisfactory on infra-regional clust
 \url{https://mr-easy.github.io/2019-12-19-burrows-wheeler-alignment-part-1/}
 \bibitem{bwt.h me}
 \url{https://github.com/AndreiBlindu/genome-pattern-search-OpenMPI/blob/main/src/utils/bwt.h}
+\bibitem{parallel me}
+\url{https://github.com/AndreiBlindu/genome-pattern-search-OpenMPI/blob/main/src/parallel/main.cpp}
 \bibitem{analysis me}
 \url{https://github.com/AndreiBlindu/genome-pattern-search-OpenMPI/blob/main/analysis/analysis.ipynb}
 \bibitem{hpc scaling}
