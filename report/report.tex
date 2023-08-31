@@ -34,7 +34,7 @@
 %% please give \usepackage{epsfig}
 
 %% The amssymb package provides various useful mathematical symbols
-\usepackage{hyperref}
+\usepackage[hidelinks]{hyperref}
 \usepackage{listings}
 \usepackage{amssymb}
 \usepackage{lipsum}
@@ -268,7 +268,7 @@ The tests have been performed by setting up a hostfile on the master containing 
 \begin{lstlisting}[language=bash]
 mpirun --hostfile hostfile -np [N] ./a.out [genome_path] [pattern_path]
 \end{lstlisting}
-The execution times measured for each execution have been collected in a \emph{.csv} file where a first analysis was performed to compute the speedup and efficiency using excel features. Speedup and efficiency are important metrics needed to assess strong and weak scalability. \\
+The execution times measured for each execution have been collected in a \emph{.csv} file where a first analysis was performed to compute the speedup and efficiency using excel features (the files containing the results of the experiments can be found in the project repository under the \emph{tests} directory\cite{tests me}). Speedup and efficiency are important metrics needed to assess strong and weak scalability. \\
 \textbf{Strong scalability} is the capability of a parallel program to reduce the computational time of a fixed size problem by adding more processors. Strong scalability is important to consider when we deal with a fixed amount of data and we want to speedup the execution of the computation. A simple way to evaluate it is computing the speedup as the ratio between the time t(1) needed to complete a serial task, and the amount of time t(N) needed to complete the same unit of work with N processing elements (parallel task)\cite{hpc scaling}:
 $$ Speedup(N) = \frac{t(1)}{t(N)} $$
 Whereas, \textbf{weak scalability} is the capability of a parallel program to keep the computational time fixed while increasing the size of the problem. Weak scalability is important to consider when we deal with problems that can increase in size and we want to keep the computation efficient by distributing it on more nodes. A simple way to assess weak scalability is to compute efficiency as the ratio between the time t(1) needed to complete a work unit with 1 processing element, and the amount of time t(N) needed to complete N of the same work units with N processing elements\cite{hpc scaling}:
@@ -355,9 +355,10 @@ We can observe a behaviour similar to the results obtained for the execution on 
 
 \section{Conclusions}
 The parallel implementation of the Burrows-Wheeler algorithm for substring matching provided in this project performed well on intra-regional clusters, both fat and light, in terms of both strong and weak scalability, especially for small datasets. Whereas for larger datasets it proved to be less scalable probably due to data transfer overheads. The speedups obtained were in line with what was expected from the a priori analysis, although a bit worse due to communication overheads. \\
-On the other hand, performances were not as satisfactory on infra-regional clusters, where the code achieved lower speedup and efficiency both on fat and light clusters compared to the corresponding intra-regional experiments. Moreover, as opposed to the intra-regional scenario, in the infra-regional experiments smaller datasets proved to be less scalable, probably because of the overheads needed to just connect and synchronize machines far from each other.
+On the other hand, performances were not as satisfactory on infra-regional clusters, where the code achieved lower speedup and efficiency both on fat and light clusters compared to the corresponding intra-regional experiments. Moreover, as opposed to the intra-regional scenario, in the infra-regional experiments smaller datasets proved to be less scalable, probably because of the overheads needed to just connect and synchronize machines far from each other. \\
+It could be interesting trying to find a way to efficiently parallelize also the reading and prepreocessing of the datasets in order to investigate the possible improvements in performance with respect to this implementation in the different conditions discussed.
 
-
+\def\UrlBreaks{\do\/\do-}
 \begin{thebibliography}{9}
 \bibitem{nucleotide} \url{https://en.wikipedia.org/wiki/Nucleotide}
 \bibitem{ncbi} \url{https://www.ncbi.nlm.nih.gov/genbank/}
@@ -375,6 +376,8 @@ On the other hand, performances were not as satisfactory on infra-regional clust
 \url{https://github.com/AndreiBlindu/genome-pattern-search-OpenMPI/blob/main/src/utils/bwt.h}
 \bibitem{parallel me}
 \url{https://github.com/AndreiBlindu/genome-pattern-search-OpenMPI/blob/main/src/parallel/main.cpp}
+\bibitem{tests me}
+\url{https://github.com/AndreiBlindu/genome-pattern-search-OpenMPI/tree/main/src/parallel/GCP/tests}
 \bibitem{analysis me}
 \url{https://github.com/AndreiBlindu/genome-pattern-search-OpenMPI/blob/main/analysis/analysis.ipynb}
 \bibitem{hpc scaling}
